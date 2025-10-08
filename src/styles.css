@@ -1,0 +1,526 @@
+/* ======================================
+   THEME VARIABLES
+   ====================================== */
+
+  /* --- Default Light Theme --- */
+  :root {
+    --bg: #ffffff;
+    --card: #f5f7fa;
+    --ink: #1a1a1a;
+    --ink-dim: #444;
+    --accent: #0b5ed7;
+    --border: #cccccc;
+    --grid-bg: #e9eef5;
+    --tile-bg: #f8f9fb;
+  }
+
+  /* --- Dark Theme (when html has .dark) --- */
+  html.dark {
+    --bg: #0b0f14;
+    --card: #111827;
+    --ink: #e5e7eb;
+    --ink-dim: #9ca3af;
+    --accent: #60a5fa;
+    --border: #1f2937;
+    --grid-bg: #0a0f15;
+    --tile-bg: #1e293b;
+  }
+
+  /* --- Smooth Transition Between Themes --- */
+  html, body {
+    background-color: var(--bg);
+    color: var(--ink);
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  /* ===========================================
+    SPLASH SCREEN
+    =========================================== */
+
+  .splash {
+    opacity: 1;
+    transition: opacity 0.8s ease-in-out;
+  }
+  
+  .splash.fade-out {
+    opacity: 0;
+  }   
+  
+  /* ===========================================
+     GLOBAL BASE
+     =========================================== */
+  * { box-sizing: border-box; }
+  
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Arial;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  
+  .app {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  
+  h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    color: var(--accent);
+  }
+  
+  .tag {
+    margin: 0 0 16px;
+    color: var(--ink-dim);
+  }
+
+    /* ============================================
+    Gradient Title (Crossword Generate +)
+    ============================================ */
+  .gradient-title {
+    font-size: 3.2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 4px;          /* ✅ wider spacing between all characters */
+    word-spacing: 12px;           /* ✅ ensures space between words */
+    text-align: center;
+    margin: 0;
+    padding: 0.5rem;
+
+    /* --- Gradient Fill --- */
+    background: linear-gradient(90deg, #60a5fa, #3b82f6, #9333ea);
+    background-clip: text;
+
+    /* stylelint-disable-next-line property-no-vendor-prefix */
+    -webkit-background-clip: text; /* ✅ Needed for Edge/Chrome/Safari */
+    -webkit-text-fill-color: transparent; /* ✅ Reveals gradient through text */
+
+    /* --- Optional polish --- */
+    text-shadow:
+      0 0 8px rgba(96, 165, 250, 0.5),
+      0 0 16px rgba(147, 51, 234, 0.4);
+    transition: transform 0.3s ease, text-shadow 0.3s ease;
+  }
+
+  .gradient-title:hover {
+    transform: scale(1.03);
+    text-shadow:
+      0 0 12px rgba(96, 165, 250, 0.8),
+      0 0 24px rgba(147, 51, 234, 0.7);
+  }
+  
+  /* ===========================================
+     TOOLBAR
+     =========================================== */
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 12px 0 16px;
+  }
+  
+  .toolbar input {
+    padding: 10px 12px;
+    background: var(--tile-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--ink);
+    min-width: 280px;
+  }
+  
+  .toolbar .num input { width: 80px; }
+  
+  .switch {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-dim);
+  }
+
+  .theme-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+  }
+  
+  .theme-btn {
+    background: var(--btn-bg, #222);
+    color: var(--btn-fg, #fff);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s, transform 0.2s;
+  }
+  
+  .theme-btn:hover {
+    background: #0077ff;
+    transform: scale(1.05);
+  }  
+  
+  /* 📱 Responsive handling for toolbar + theme toggle */
+  @media (max-width: 768px) {
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  
+    .toolbar input,
+    .toolbar .num input,
+    .toolbar button {
+      width: 100%;
+    }
+  
+    /* Stack theme button below other controls */
+    .theme-btn {
+      margin-top: 6px;
+      width: 100%;
+    }
+  }
+  
+  /* Optional: slightly hide theme toggle on very small screens */
+  @media (max-width: 420px) {
+    .theme-btn {
+      display: none;
+    }
+  }  
+  
+  .primary {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .primary:disabled { opacity: .6; cursor: not-allowed; }
+  
+  .ghost {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--ink-dim);
+    border-radius: 10px;
+    padding: 8px 12px;
+  }
+  
+  .voice { margin: 6px 0 18px; }
+  
+  /* ===========================================
+     ERROR & PLACEHOLDER
+     =========================================== */
+  .error {
+    background: #fde8e8;
+    border: 1px solid #f5b5b5;
+    color: #a10f0f;
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin: 8px 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    .error {
+      background: #3f1d1d;
+      border-color: #7f1d1d;
+      color: #fecaca;
+    }
+  }
+  
+  .placeholder {
+    opacity: .8;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+  
+  /* ===========================================
+     PUZZLE LAYOUT
+     =========================================== */
+  .puzzle-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .topic { color: var(--ink-dim); }
+  
+  .grid-and-clues {
+    display: grid;
+    grid-template-columns: auto minmax(260px, 340px);
+    gap: 18px;
+    align-items: start;
+  }
+  
+  /* ===========================================
+     CROSSWORD GRID
+     =========================================== */
+  .grid {
+    display: inline-block;
+    width: fit-content;
+    height: fit-content;
+    background: var(--grid-bg);
+    padding: 8px;
+    border-radius: 12px;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 1px var(--border) inset;
+  }
+  .grid-row { display: flex; width: fit-content; }
+  
+  .cell {
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tile-bg);
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
+  }
+  .cell.block { background: #111; }
+  .cell-num {
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    font-size: 0.6em;
+    color: var(--accent);
+  }
+  .cell-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: bold;
+    background: transparent;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .cell-input:focus {
+    outline: 2px solid var(--accent);
+    background: rgba(96,165,250,0.15);
+  }
+  .cell-input.active {
+    background: rgba(96,165,250,0.25);
+    border: 1px solid var(--accent);
+  }
+  .cell-input.correct {
+    background: linear-gradient(145deg,#1e40af,#1e3a8a);
+    color: #f8fafc;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4),
+                inset 0 0 6px rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+    border-radius: 4px;
+  }
+  
+  /* ===========================================
+     CLUES PANEL
+     =========================================== */
+  .clues h3 { margin: 0 0 6px; }
+  
+  .clue-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .clue-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    padding: 4px 0;
+  }
+  .clue-list li.solved {
+    color: #9aa0a6;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+  }
+  .clue-num {
+    font-weight: bold;
+    color: var(--accent);
+    margin-right: 6px;
+    min-width: 24px;
+    text-align: right;
+  }
+  .clue-text { color: var(--ink); }
+  .active-clue .clue-text {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .active-clue {
+    background: rgba(96,165,250,0.15);
+    border-radius: 6px;
+    padding: 2px 4px;
+  }
+  
+  /* ===========================================
+     BUTTONS
+     =========================================== */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .btn-small {
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    background: #3b82f6;
+  }
+  
+  .solution-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    margin-top: 12px;
+  }
+  .solution-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  }
+  
+  /* ===========================================
+     RESPONSIVE
+     =========================================== */
+  @media (max-width:1024px){
+    .grid-and-clues {
+      grid-template-columns:1fr minmax(200px,280px);
+      gap:12px;
+    }
+  }
+  @media (max-width:768px){
+    .grid-and-clues { grid-template-columns:1fr; }
+    .clues { margin-top:16px; }
+    .toolbar {
+      flex-direction:column;
+      align-items:stretch;
+    }
+    .toolbar input,
+    .toolbar .num input,
+    .toolbar button { width:100%; }
+  }
+  
+  /* ===========================================
+     END SCREEN
+     =========================================== */
+  .end-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background: linear-gradient(145deg,#f0f4fa,#dfe6f1);
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 380px;
+    text-align: center;
+    color: var(--ink);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2),
+                inset 0 2px 6px rgba(255,255,255,0.4);
+    z-index: 2000;
+    animation: popIn 0.4s ease;
+  }
+  @media (prefers-color-scheme: dark) {
+    .end-screen {
+      background: linear-gradient(145deg,#1a1f2e,#0d111a);
+      color: #e6e9ef;
+      box-shadow:
+        0 8px 20px rgba(0,0,0,0.6),
+        inset 0 2px 6px rgba(255,255,255,0.2),
+        inset 0 -2px 6px rgba(0,0,0,0.4);
+    }
+  }
+  .end-screen h2 {
+    font-size: 1.6rem;
+    margin-bottom: 1.2rem;
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(96,165,250,0.6);
+  }
+  .end-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  .end-buttons .btn {
+    background: linear-gradient(145deg, var(--accent), #0056b3);
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1.4rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
+  }
+  .end-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+  }
+  
+  /* ===========================================
+     FOOTER
+     =========================================== */
+  footer {
+    margin-top: 22px;
+    color: var(--ink-dim);
+  }
+  
+  /* ===========================================
+     PRINT MODE
+     =========================================== */
+  @media print {
+    .grid { width: fit-content !important; height: fit-content !important; }
+    .cell.block {
+      background: #000 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .cell.block::before {
+      content: "█";
+      font-size: 20px;
+      line-height: 24px;
+      color: #3636361b !important;
+      display: block;
+      text-align: center;
+    }
+    .cell {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #000 !important;
+      background: #fff !important;
+      box-shadow: none !important;
+    }
+    .cell-input {
+      background: transparent !important;
+      border: none !important;
+      color: #000 !important;
+      font-size: 14px;
+    }
+    .toolbar, .voice, .end-screen, footer, button {
+      display: none !important;
+    }
+  }
+  
