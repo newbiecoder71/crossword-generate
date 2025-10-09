@@ -35,21 +35,31 @@ export default function CrosswordGrid({ grid, numbers, placements, answers, setA
     if (!col && col !== 0) return;
   
     // walk through the word to find first empty cell
-    for (let i = 0; i < word.length; i++) {
-      const r = dir === "across" ? row : row + i;
-      const c = dir === "across" ? col + i : col;
-  
-      if (!answers[r][c]) {
-        inputRefs.current?.[r]?.[c]?.current?.focus();
-        return;
+    const focusFirstEmpty = () => {
+      for (let i = 0; i < word.length; i++) {
+        const r = dir === "across" ? row : row + i;
+        const c = dir === "across" ? col + i : col;
+    
+        if (!answers[r][c]) {
+          inputRefs.current?.[r]?.[c]?.current?.focus();
+          return;
+        }
       }
-    }
+    };
   
     // if all filled, just focus first letter
     inputRefs.current?.[row]?.[col]?.current?.focus();
-  }, [activeClue, answers]);
+
+    focusFirstEmpty();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeClue, showSolution, showClueAnswer]);
+
+  const lastMove = useRef(null);
   
   const handleInput = (r, c, val) => {
+    const now = Date.now();
+    if (lastMove.current && now - lastMove.current < 50) return; // ignore duplicate focus
+    lastMove.current = now;
     const char = val.toUpperCase().slice(0, 1);
     const next = answers.map((row) => [...row]);
     next[r][c] = char;
@@ -73,11 +83,7 @@ export default function CrosswordGrid({ grid, numbers, placements, answers, setA
     if (direction === "across") {
       let nextCol = c + 1;
       // keep moving right while inside grid, not a block, and already filled
-      while (
-        nextCol < grid[0].length &&
-        grid[r][nextCol] !== "#" &&
-        answers[r][nextCol]
-      ) {
+      while (nextCol < grid[0].length && grid[r][nextCol] === "#") {
         nextCol++;
       }
       if (nextCol < grid[0].length && grid[r][nextCol] !== "#") {
@@ -86,18 +92,14 @@ export default function CrosswordGrid({ grid, numbers, placements, answers, setA
     } else if (direction === "down") {
       let nextRow = r + 1;
       // keep moving down while inside grid, not a block, and already filled
-      while (
-        nextRow < grid.length &&
-        grid[nextRow][c] !== "#" &&
-        answers[nextRow][c]
-      ) {
+      while (nextRow < grid.length && grid[nextRow][c] === "#") {
         nextRow++;
       }
       if (nextRow < grid.length && grid[nextRow][c] !== "#") {
         inputRefs.current?.[nextRow]?.[c]?.current?.focus();
       }
     }
-  };  
+  };
 
   const handleKeyDown = (e, r, c) => {
     if (e.key === "Backspace") {
