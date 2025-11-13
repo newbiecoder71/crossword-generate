@@ -8,7 +8,8 @@ import "./WordStorm.css";
 export default function WordStormStart({ onStart }) {
   const [showInputs, setShowInputs] = useState(false);
   const [topic, setTopic] = useState("");
-  const [count, setCount] = useState(8);
+  const [count, setCount] = useState(10);
+  const [showBubble, setShowBubble] = useState(true);
 
   const letters = [
     ..."CROSSWORD".split(""),
@@ -22,6 +23,30 @@ export default function WordStormStart({ onStart }) {
     // Delay input fade-in
     const timer = setTimeout(() => setShowInputs(true), 2000);
     return () => clearTimeout(timer);
+  }, []);
+
+  // 👀 Make WordBot's pupils follow the mouse
+  useEffect(() => {
+    const moveEyes = (event) => {
+      const eyes = document.querySelectorAll(".speech-eyes .eye");
+      eyes.forEach((eye) => {
+        const pupil = eye.querySelector(".pupil");
+        if (!pupil) return;
+
+        const rect = eye.getBoundingClientRect();
+        const eyeCenterX = rect.left + rect.width / 2;
+        const eyeCenterY = rect.top + rect.height / 2;
+        const dx = event.clientX - eyeCenterX;
+        const dy = event.clientY - eyeCenterY;
+        const angle = Math.atan2(dy, dx);
+        const radius = 4; // how far pupils can move inside the eye
+
+        pupil.style.transform = `translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px)`;
+      });
+    };
+
+    window.addEventListener("mousemove", moveEyes);
+    return () => window.removeEventListener("mousemove", moveEyes);
   }, []);
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -71,7 +96,7 @@ export default function WordStormStart({ onStart }) {
             scale: 2,
             rotate: Math.random() * 360,
           };
-
+          
           return (
             <motion.span
               key={i}
@@ -98,6 +123,7 @@ export default function WordStormStart({ onStart }) {
       </div>
 
       {/* Fade in inputs */}
+      {/* Existing animated input controls */}
       <AnimatePresence>
         {showInputs && (
           <motion.div
@@ -115,29 +141,54 @@ export default function WordStormStart({ onStart }) {
               autoFocus
             />
             <label className="wordstorm-num">
-              Words:
+              Words:{" "}
               <input
                 type="number"
-                min="8"
+                min="10"
                 max="50"
                 value={count}
-                onChange={(e) =>
-                  setCount(parseInt(e.target.value || 0))
-                }
+                onChange={(e) => setCount(parseInt(e.target.value))}
               />
             </label>
             <button
               className={`wordstorm-btn ${isGenerating ? "loading" : ""}`}
               onClick={() => {
                 if (!topic.trim()) return;
+                setShowBubble(false); // 👈 hide WordBot bubble
                 setIsGenerating(true);
                 onStart(topic, count);
-                setTimeout(() => setIsGenerating(false), 3000); // optional short visual delay
-              }}
+                setTimeout(() => setIsGenerating(false), 3000);
+              }}              
               disabled={isGenerating}
             >
               {isGenerating ? <em>Generating...</em> : "⚡ Generate"}
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 💬 Friendly speech bubble mascot (appears after inputs) */}
+      <AnimatePresence>
+        {showInputs && showBubble && (
+          <motion.div
+            className="speech-bubble-container"
+            initial={{ opacity: 0, y: -50 }}      // starts above
+            animate={{ opacity: 1, y: 0 }}        // slides down
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ delay: 1.0, duration: 1.2, ease: "easeOut" }}
+          >
+            <div className="speech-bubble cloud-bot">
+              <div className="speech-eyes">
+                <div className="eye left">
+                  <div className="pupil"></div>
+                </div>
+                <div className="eye right">
+                  <div className="pupil"></div>
+                </div>
+              </div>
+            <strong>Hey there!</strong> Type a topic and pick your word count — then tap Generate! Let’s create a crossword!
+            <div className="tail"></div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

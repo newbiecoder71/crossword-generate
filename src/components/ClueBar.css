@@ -1,0 +1,51 @@
+.clue-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0f172a;
+  border: 1px solid #1e3a8a;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-top: 12px;
+}
+
+.clue-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 9999px;
+  background: #1e3a8a;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.clue-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.clue-num {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.clue-text {
+  color: #fff;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clue-dir {
+  color: #94a3b8;
+  font-size: 0.7rem;
+}

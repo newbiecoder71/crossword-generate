@@ -9,6 +9,7 @@ import { useWindowSize } from "react-use";
 import splashLight from "./assets/splash-light.png";
 import splashDark from "./assets/splash-dark.png";
 import WordStormStart from "./components/WordStormStart.jsx";
+import FloatingClue from "./components/FloatingClue.jsx";
 
 export default function App() {
   // === PHASE CONTROL ===
@@ -92,7 +93,7 @@ export default function App() {
 
   useEffect(() => setShowClueAnswer(false), [activeClue]);
 
-  useEffect(() => {
+  { /* useEffect(() => {
     if (phase !== "game" || !puzzle || !activeClue) return;
 
     const { row, col, dir, word } = activeClue;
@@ -113,8 +114,8 @@ export default function App() {
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [phase, puzzle, activeClue, answers]);
-
+  }, [phase, puzzle, activeClue, answers]); */ }
+  
   // === GENERATE CROSSWORD ===
   const handleGenerate = async (chosenTopic, chosenCount) => {
     setTopic(chosenTopic);
@@ -160,6 +161,53 @@ export default function App() {
     }
   };
 
+  // Cycle through clues
+  const handlePrevClue = () => {
+    if (!puzzle) return;
+
+    const allClues = [
+      ...puzzle.clues.across.map((c) => ({ ...c, dir: "across" })),
+      ...puzzle.clues.down.map((c) => ({ ...c, dir: "down" })),
+    ];
+
+    if (!activeClue) {
+      setActiveClue(allClues[0]);
+      setDirection(allClues[0].dir);
+      return;
+    }
+
+    const idx = allClues.findIndex(
+      (c) => c.num === activeClue.num && c.dir === activeClue.dir
+    );
+    const prev = (idx - 1 + allClues.length) % allClues.length;
+
+    setActiveClue(allClues[prev]);
+    setDirection(allClues[prev].dir);
+  };
+
+  const handleNextClue = () => {
+    if (!puzzle) return;
+
+    const allClues = [
+      ...puzzle.clues.across.map((c) => ({ ...c, dir: "across" })),
+      ...puzzle.clues.down.map((c) => ({ ...c, dir: "down" })),
+    ];
+
+    if (!activeClue) {
+      setActiveClue(allClues[0]);
+      setDirection(allClues[0].dir);
+      return;
+    }
+
+    const idx = allClues.findIndex(
+      (c) => c.num === activeClue.num && c.dir === activeClue.dir
+    );
+    const next = (idx + 1) % allClues.length;
+
+    setActiveClue(allClues[next]);
+    setDirection(allClues[next].dir);
+  };
+
   // === SPLASH SCREEN ===
   if (phase === "splash") {
     return (
@@ -196,10 +244,10 @@ export default function App() {
 
   // === CROSSWORD GAME PHASE ===
   if (phase === "game" && puzzle) {
-    const goToNextClue = (currentClue, clues, answers) => {
-      const isAcross = currentClue.dir === "across";
+    const goToNextClue = (activeClue, clues, answers) => {
+      const isAcross = activeClue.dir === "across";
       const currentList = isAcross ? clues.across : clues.down;
-      const currentIndex = currentList.findIndex((c) => c.num === currentClue.num);
+      const currentIndex = currentList.findIndex((c) => c.num === activeClue.num);
 
       for (let i = currentIndex + 1; i < currentList.length; i++) {
         const next = currentList[i];
@@ -213,6 +261,48 @@ export default function App() {
       }
 
       return null;
+    };
+
+    // make a flat list in the order you want
+    const allClues = [
+      ...puzzle.clues.across,
+      ...puzzle.clues.down,
+    ];
+
+    // find current index
+    const currentIndex = allClues.findIndex(
+      (c) => c.num === activeClue?.num && c.dir === activeClue?.dir
+    );
+
+    // go to previous clue
+    const handlePrevClue = () => {
+      if (!allClues.length) return;
+      // if we didn't find it, just go to first
+      if (currentIndex === -1) {
+        setActiveClue(allClues[0]);
+        setDirection(allClues[0].dir);
+        return;
+      }
+      const prevIndex =
+        currentIndex > 0 ? currentIndex - 1 : allClues.length - 1;
+      const prevClue = allClues[prevIndex];
+      setActiveClue(prevClue);
+      setDirection(prevClue.dir);
+    };
+
+    // go to next clue
+    const handleNextClue = () => {
+      if (!allClues.length) return;
+      if (currentIndex === -1) {
+        setActiveClue(allClues[0]);
+        setDirection(allClues[0].dir);
+        return;
+      }
+      const nextIndex =
+        currentIndex < allClues.length - 1 ? currentIndex + 1 : 0;
+      const nextClue = allClues[nextIndex];
+      setActiveClue(nextClue);
+      setDirection(nextClue.dir);
     };
 
     // ✅ Auto-focus first letter of the active clue after grid mounts
@@ -269,8 +359,11 @@ export default function App() {
             setDirection={setDirection}
             activeClue={activeClue}
             setActiveClue={setActiveClue}
+            clues={puzzle.clues}
             showSolution={showSolution}
             showClueAnswer={showClueAnswer}
+            onPrevClue={handlePrevClue}
+            onNextClue={handleNextClue}
             onWordComplete={(clue) => {
               const next = goToNextClue(clue, puzzle.clues, answers);
               if (next) {
@@ -355,7 +448,7 @@ export default function App() {
                     setActiveClue(null);
                     setShowSolution(false);
                     setTopic("");
-                    setCount(8);
+                    setCount(10);
                     setPhase("start");
                   }}
                 >

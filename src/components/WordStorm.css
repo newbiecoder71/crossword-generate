@@ -27,6 +27,91 @@
   mix-blend-mode: screen;      /* ✅ makes glow visible on dark bg */
 }
 
+/* 🌥️ WordBot Container */
+.speech-bubble-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 15;             /* above floating letters */
+  pointer-events: none;    /* allows clicks through if overlapping */
+}
+
+/* ☁️ Clean Cloud-Style WordBot */
+.speech-bubble.cloud-bot {
+  position: relative;
+  z-index: 2;
+  width: 240px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  /* Colors & Font */
+  color: #2e6cbf;
+  font-weight: 500;
+  font-size: 0.95rem;
+
+ /* Cloud Bot Shape */
+  background: linear-gradient(145deg, #ffffff 0%, #f3f6fb 60%, #e9eef7 100%);
+  border-radius: 20px; /* <- rectangular with gentle rounded corners */
+  box-shadow:
+    0 0 10px rgba(255, 255, 255, 0.7),
+    0 8px 14px rgba(105, 166, 255, 0.25),
+    inset 0 0 12px rgba(255, 255, 255, 0.4);
+    
+  /* Subtle Animation */
+  animation: floaty 6s ease-in-out infinite;
+
+  /* Centered Layout */
+  padding: 1.5rem;
+  overflow: visible;
+}
+
+/* 👀 Eyes */
+.speech-eyes {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.speech-eyes .eye {
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  border: 2px solid rgba(46, 108, 191, 0.8);
+  box-shadow: 0 0 5px rgba(46, 108, 191, 0.3);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: blink 6s infinite;
+}
+
+.speech-eyes .pupil {
+  width: 8px;
+  height: 8px;
+  background: #2e6cbf;
+  border-radius: 50%;
+  transition: transform 0.08s linear;
+}
+
+/* ✨ Animations */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.3); }
+}
+
 /* Title text */
 .wordstorm-title {
   position: relative;
@@ -56,6 +141,7 @@
   border-radius: 6px;
   padding: 0.6rem 1rem;
   font-size: 1.1rem;
+  margin-left: 8px;
 }
 
 .wordstorm-btn {
