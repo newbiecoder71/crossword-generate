@@ -251,6 +251,7 @@
     grid-template-columns: auto minmax(260px, 340px);
     gap: 18px;
     align-items: start;
+    justify-content: center;
   }
   
   /* ===========================================
@@ -451,7 +452,7 @@
   /* ===========================================
      RESPONSIVE
      =========================================== */
-  @media (max-width: 100%){
+  @media (max-width: 768px){
     .grid-and-clues {
       grid-template-columns:1fr minmax(200px,280px);
       gap:12px;
