@@ -451,7 +451,7 @@
   /* ===========================================
      RESPONSIVE
      =========================================== */
-  @media (max-width:1024px){
+  @media (max-width: 100%){
     .grid-and-clues {
       grid-template-columns:1fr minmax(200px,280px);
       gap:12px;

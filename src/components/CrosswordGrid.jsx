@@ -20,6 +20,7 @@ export default function CrosswordGrid({
   showClueAnswer,
   onPrevClue,
   onNextClue,
+  onRefocusReady,
 }) {
   const inputRefs = useRef([]);
   const [activeCell, setActiveCell] = useState(null);        // "r-c"
@@ -132,6 +133,19 @@ export default function CrosswordGrid({
     queueMicrotask(() => (suppressFocusRef.current = false));
   };
 
+  // Keep focus on the current active cell after UI actions
+  const refocusActiveCell = React.useCallback(() => {
+    if (!activeCell) return;
+    const [r, c] = activeCell.split("-").map(Number);
+    const el = inputRefs.current?.[r]?.[c]?.current;
+    if (el) el.focus();
+  }, [activeCell]);
+
+  useEffect(() => {
+    // Tell parent what function to call to refocus the active cell
+    if (onRefocusReady) onRefocusReady(() => refocusActiveCell());
+  }, [onRefocusReady, refocusActiveCell]);  
+
   const findClueForCell = (r, c, preferDir = direction) => {
     if (!clues) return null;
   
@@ -146,13 +160,52 @@ export default function CrosswordGrid({
     if (preferDir === "across" && inAcross) return inAcross;
     if (preferDir === "down"   && inDown)   return inDown;
     return inAcross || inDown || null;
-  };  
+  };
+  
+  const moveWithinActiveClueWithArrows = (key, r, c) => {
+    if (!activeClue) return;
 
-  const expectedLetterAt = (r, c) => {
-    // reuse your solutionLetter utility
-    const ch = solutionLetter(r, c, placements);
-    return ch ? ch.toUpperCase() : "";
-  };  
+    const { row, col, dir, word } = activeClue;
+    let targetR = r;
+    let targetC = c;
+
+    if (dir === "across") {
+      // only left/right matter for across clues
+      if (key === "ArrowLeft") {
+        targetC = c - 1;
+      } else if (key === "ArrowRight") {
+        targetC = c + 1;
+      } else {
+        return;
+      }
+
+      const startC = col;
+      const endC = col + word.length - 1;
+      if (targetC < startC || targetC > endC) return;
+    } else {
+      // dir === "down" → only up/down matter
+      if (key === "ArrowUp") {
+        targetR = r - 1;
+      } else if (key === "ArrowDown") {
+        targetR = r + 1;
+      } else {
+        return;
+      }
+
+      const startR = row;
+      const endR = row + word.length - 1;
+      if (targetR < startR || targetR > endR) return;
+    }
+
+    // don't move onto blocks
+    if (grid[targetR]?.[targetC] === "#") return;
+
+    const el = inputRefs.current?.[targetR]?.[targetC]?.current;
+    if (el) {
+      el.focus();
+      setActiveCell(`${targetR}-${targetC}`);
+    }
+  };
 
   // ---- Focus behavior: ONLY on real answer-span change ----
   // * Don’t refocus while typing/backspacing (suppressFocusRef).
@@ -276,6 +329,18 @@ export default function CrosswordGrid({
       return;
     }
 
+    // Arrow key navigation within the current active clue
+    if (
+      key === "ArrowLeft" ||
+      key === "ArrowRight" ||
+      key === "ArrowUp" ||
+      key === "ArrowDown"
+    ) {
+      e.preventDefault();
+      moveWithinActiveClueWithArrows(key, r, c);
+      return;
+    }
+
     if (/^[a-z]$/i.test(key)) {
       e.preventDefault();
       handleInput(r, c, key);
@@ -324,7 +389,7 @@ export default function CrosswordGrid({
       }
     }
     return "";
-  }
+  }  
 
   if (!grid || !answers) return <div>⚠️ Grid not ready</div>;
 
@@ -385,19 +450,25 @@ export default function CrosswordGrid({
                       value={
                         showSolution
                           ? solutionLetter(r, c, placements)
-                          : (showClueAnswer && isInActiveClue)
+                          : showClueAnswer && isInActiveClue
                           ? solutionLetter(r, c, placements)
                           : val
                       }
+                      readOnly                 // <-- stop mobile keyboard, but still focusable
+                      inputMode="none"         // <-- tell mobile "no keyboard for this input"
+                    
                       onFocus={() => setActiveCell(`${r}-${c}`)}
                       onClick={() => handleCellClick(r, c)}
-                      onChange={(e) => handleInput(r, c, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(e, r, c)}
+                    
+                      // You don't actually need onChange now, since input comes from
+                      // your virtual keyboard + handleInput, but leaving it won't break anything.
+                      // onChange={(e) => handleInput(r, c, e.target.value)}
+                    
+                      onKeyDown={(e) => handleKeyDown(e, r, c)}  // desktop keyboard still works
                       autoComplete="off"
                       autoCorrect="off"
                       autoCapitalize="characters"
-                      inputMode="text"
-                    />
+                    />                  
                   )}
                 </div>
               );

@@ -27,6 +27,7 @@ export default function App() {
   const [puzzleComplete, setPuzzleComplete] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
   const [showClueAnswer, setShowClueAnswer] = useState(false);
+  const [refocusGrid, setRefocusGrid] = useState(() => () => {});
 
   // === THEME ===
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "system");
@@ -93,13 +94,16 @@ export default function App() {
 
   useEffect(() => setShowClueAnswer(false), [activeClue]);
 
-  { /* useEffect(() => {
+  useEffect(() => {
+    // Only do this when we're in the game AND the clue answer is visible
+    if (!showClueAnswer) return;
     if (phase !== "game" || !puzzle || !activeClue) return;
-
+  
     const { row, col, dir, word } = activeClue;
     if (row == null || col == null) return;
-
+  
     const timer = setTimeout(() => {
+      // Try to focus the first *empty* cell for the current word
       for (let i = 0; i < word.length; i++) {
         const r = dir === "across" ? row : row + i;
         const c = dir === "across" ? col + i : col;
@@ -109,12 +113,13 @@ export default function App() {
           return;
         }
       }
+      // If everything is filled, focus the starting cell
       const firstEl = document.querySelector(`[data-coord="${row}-${col}"]`);
       firstEl?.focus();
-    }, 350);
-
+    }, 0); // no need to wait 350ms here
+  
     return () => clearTimeout(timer);
-  }, [phase, puzzle, activeClue, answers]); */ }
+  }, [showClueAnswer, phase, puzzle, activeClue, answers]);  
   
   // === GENERATE CROSSWORD ===
   const handleGenerate = async (chosenTopic, chosenCount) => {
@@ -329,20 +334,52 @@ export default function App() {
         <div className="action-buttons">
           <button
             className="btn-small"
-            onClick={() => setShowSolution(!showSolution)}
+            onClick={() => {
+              setShowSolution(!showSolution);
+              setTimeout(() => refocusGrid(), 0);
+            }}
           >
             {showSolution ? "Hide Solution" : "Show Solution"}
           </button>
 
           <button
             className="btn-small"
-            onClick={() => setShowClueAnswer(!showClueAnswer)}
             disabled={!activeClue}
+            // 🖱️ Desktop: show while held
+            onMouseDown={(e) => {
+              // Don’t let the button steal focus away from the grid cell
+              e.preventDefault();
+              setShowClueAnswer(true);
+            }}
+            onMouseUp={() => {
+              setShowClueAnswer(false);
+              // just in case focus moved, force it back to the active cell
+              refocusGrid();
+            }}
+            onMouseLeave={() => {
+              // if they drag off the button while holding
+              setShowClueAnswer(false);
+              refocusGrid();
+            }}
+            // 📱 Touch: show while finger is down
+            onTouchStart={(e) => {
+              e.preventDefault(); // again, prevent focus steal
+              setShowClueAnswer(true);
+            }}
+            onTouchEnd={() => {
+              setShowClueAnswer(false);
+              refocusGrid();
+            }}
           >
-            {showClueAnswer ? "Hide Clue Answer" : "Show Clue Answer"}
+            Show Clue Answer
           </button>
 
-          <button className="btn-small" onClick={() => window.print()}>
+          <button className="btn-small"
+            onClick={() => {
+              window.print();
+              setTimeout(() => refocusGrid(), 0);
+            }}
+          >
             Print Puzzle
           </button>
         </div>
@@ -364,6 +401,7 @@ export default function App() {
             showClueAnswer={showClueAnswer}
             onPrevClue={handlePrevClue}
             onNextClue={handleNextClue}
+            onRefocusReady={setRefocusGrid}
             onWordComplete={(clue) => {
               const next = goToNextClue(clue, puzzle.clues, answers);
               if (next) {
