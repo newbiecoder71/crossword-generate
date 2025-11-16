@@ -454,8 +454,8 @@ export default function CrosswordGrid({
                           ? solutionLetter(r, c, placements)
                           : val
                       }
-                      readOnly                 // <-- stop mobile keyboard, but still focusable
-                      inputMode="none"         // <-- tell mobile "no keyboard for this input"
+                      readOnly={window.innerWidth < 900}
+                      inputMode={window.innerWidth < 900 ? "none" : "text"}
                     
                       onFocus={() => setActiveCell(`${r}-${c}`)}
                       onClick={() => handleCellClick(r, c)}
