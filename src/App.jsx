@@ -66,13 +66,47 @@ export default function App() {
 
   useEffect(() => {
     if (phase !== "splash") return;
+  
+    // 🔁 Try to restore saved puzzle first
+    const saved = localStorage.getItem("crossword-progress");
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+  
+        // Basic sanity check
+        if (data.grid && data.numbers && data.placements && data.clues) {
+          setPuzzle({
+            grid: data.grid,
+            numbers: data.numbers,
+            placements: data.placements,
+            clues: data.clues,
+            topic: data.topic ?? "",
+          });
+  
+          setAnswers(
+            Array.isArray(data.answers) ? data.answers : []
+          );
+          setActiveClue(data.activeClue ?? null);
+          setDirection(data.direction ?? "across");
+          setTopic(data.topic ?? "");
+          setPhase("game");       // ✅ jump straight into the game
+          return;                 // ⬅️ don't run splash timers
+        }
+      } catch (err) {
+        console.error("Failed to load saved crossword:", err);
+        // fall through to normal splash → start behavior
+      }
+    }
+  
+    // No saved progress → normal splash behavior
     const fadeTimer = setTimeout(() => setFadeOut(true), 2000);
     const hideTimer = setTimeout(() => setPhase("start"), 2800);
+  
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
-  }, [phase]);
+  }, [phase]);  
 
   // === SAVE PROGRESS TO LOCALSTORAGE ===
   useEffect(() => {
