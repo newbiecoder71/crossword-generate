@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./WordStorm.css";
 
-export default function WordStormStart({ onStart }) {
+export default function WordStormStart({ onStart, loading }) {
   const [showInputs, setShowInputs] = useState(false);
   const [topic, setTopic] = useState("");
   const [count, setCount] = useState(10);
@@ -48,8 +48,6 @@ export default function WordStormStart({ onStart }) {
     window.addEventListener("mousemove", moveEyes);
     return () => window.removeEventListener("mousemove", moveEyes);
   }, []);
-
-  const [isGenerating, setIsGenerating] = useState(false);
 
   return (
     <div className="wordstorm-container">
@@ -151,18 +149,17 @@ export default function WordStormStart({ onStart }) {
               />
             </label>
             <button
-              className={`wordstorm-btn ${isGenerating ? "loading" : ""}`}
+              className={`wordstorm-btn ${loading ? "loading" : ""}`}
               onClick={() => {
-                if (!topic.trim()) return;
-                setShowBubble(false); // 👈 hide WordBot bubble
-                setIsGenerating(true);
-                onStart(topic, count);
-                setTimeout(() => setIsGenerating(false), 3000);
-              }}              
-              disabled={isGenerating}
+                if (!topic.trim() || loading) return; // don't double-click
+                setShowBubble(false);                 // hide WordBot bubble
+                onStart(topic, count);                // App will set loading=true
+              }}
+              disabled={loading || !topic.trim()}
             >
-              {isGenerating ? <em>Generating...</em> : "⚡ Generate"}
+              {loading ? <em>Generating...</em> : "⚡ Generate"}
             </button>
+
           </motion.div>
         )}
       </AnimatePresence>

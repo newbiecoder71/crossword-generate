@@ -2,7 +2,12 @@
 import React, { useEffect, useState } from "react";
 import CrosswordGrid from "./components/CrosswordGrid.jsx";
 import VoiceInput from "./components/VoiceInput.jsx";
-import { buildCrossword, numberClues, buildClueLists, isWordCorrect } from "./utils/crossword.js";
+import {
+  buildCrossword,
+  numberClues,
+  buildClueLists,
+  isWordCorrect,
+} from "./utils/crossword.js";
 import { getWordsAndClues } from "./utils/ai.js";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
@@ -30,7 +35,9 @@ export default function App() {
   const [refocusGrid, setRefocusGrid] = useState(() => () => {});
 
   // === THEME ===
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "system");
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "system"
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -41,7 +48,9 @@ export default function App() {
       root.classList.add("dark");
       root.style.colorScheme = "dark";
     } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
       if (prefersDark) {
         root.classList.add("dark");
         root.style.colorScheme = "dark";
@@ -61,19 +70,19 @@ export default function App() {
 
   // === SPLASH SCREEN FADE ===
   const [fadeOut, setFadeOut] = useState(false);
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)")
+    .matches;
   const { width, height } = useWindowSize();
 
+  // Try to restore saved puzzle on splash
   useEffect(() => {
     if (phase !== "splash") return;
-  
-    // 🔁 Try to restore saved puzzle first
+
     const saved = localStorage.getItem("crossword-progress");
     if (saved) {
       try {
         const data = JSON.parse(saved);
-  
-        // Basic sanity check
+
         if (data.grid && data.numbers && data.placements && data.clues) {
           setPuzzle({
             grid: data.grid,
@@ -82,31 +91,28 @@ export default function App() {
             clues: data.clues,
             topic: data.topic ?? "",
           });
-  
-          setAnswers(
-            Array.isArray(data.answers) ? data.answers : []
-          );
+
+          setAnswers(Array.isArray(data.answers) ? data.answers : []);
           setActiveClue(data.activeClue ?? null);
           setDirection(data.direction ?? "across");
           setTopic(data.topic ?? "");
-          setPhase("game");       // ✅ jump straight into the game
-          return;                 // ⬅️ don't run splash timers
+          setPhase("game");
+          return; // ⬅️ skip splash timers
         }
       } catch (err) {
         console.error("Failed to load saved crossword:", err);
-        // fall through to normal splash → start behavior
       }
     }
-  
+
     // No saved progress → normal splash behavior
     const fadeTimer = setTimeout(() => setFadeOut(true), 2000);
     const hideTimer = setTimeout(() => setPhase("start"), 2800);
-  
+
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(hideTimer);
     };
-  }, [phase]);  
+  }, [phase]);
 
   // === SAVE PROGRESS TO LOCALSTORAGE ===
   useEffect(() => {
@@ -128,16 +134,15 @@ export default function App() {
 
   useEffect(() => setShowClueAnswer(false), [activeClue]);
 
+  // Auto-focus when showing clue answer
   useEffect(() => {
-    // Only do this when we're in the game AND the clue answer is visible
     if (!showClueAnswer) return;
     if (phase !== "game" || !puzzle || !activeClue) return;
-  
+
     const { row, col, dir, word } = activeClue;
     if (row == null || col == null) return;
-  
+
     const timer = setTimeout(() => {
-      // Try to focus the first *empty* cell for the current word
       for (let i = 0; i < word.length; i++) {
         const r = dir === "across" ? row : row + i;
         const c = dir === "across" ? col + i : col;
@@ -147,14 +152,13 @@ export default function App() {
           return;
         }
       }
-      // If everything is filled, focus the starting cell
       const firstEl = document.querySelector(`[data-coord="${row}-${col}"]`);
       firstEl?.focus();
-    }, 0); // no need to wait 350ms here
-  
+    }, 0);
+
     return () => clearTimeout(timer);
-  }, [showClueAnswer, phase, puzzle, activeClue, answers]);  
-  
+  }, [showClueAnswer, phase, puzzle, activeClue, answers]);
+
   // === GENERATE CROSSWORD ===
   const handleGenerate = async (chosenTopic, chosenCount) => {
     setTopic(chosenTopic);
@@ -163,8 +167,12 @@ export default function App() {
     setLoading(true);
 
     try {
-      const wordsAndClues = await getWordsAndClues(chosenTopic.trim(), chosenCount);
-      if (!wordsAndClues?.words?.length) throw new Error("Couldn't get words for that topic.");
+      const wordsAndClues = await getWordsAndClues(
+        chosenTopic.trim(),
+        chosenCount
+      );
+      if (!wordsAndClues?.words?.length)
+        throw new Error("Couldn't get words for that topic.");
 
       const result = buildCrossword(wordsAndClues.words);
       if (!result?.grid) throw new Error("Failed to place enough words.");
@@ -200,53 +208,6 @@ export default function App() {
     }
   };
 
-  // Cycle through clues
-  const handlePrevClue = () => {
-    if (!puzzle) return;
-
-    const allClues = [
-      ...puzzle.clues.across.map((c) => ({ ...c, dir: "across" })),
-      ...puzzle.clues.down.map((c) => ({ ...c, dir: "down" })),
-    ];
-
-    if (!activeClue) {
-      setActiveClue(allClues[0]);
-      setDirection(allClues[0].dir);
-      return;
-    }
-
-    const idx = allClues.findIndex(
-      (c) => c.num === activeClue.num && c.dir === activeClue.dir
-    );
-    const prev = (idx - 1 + allClues.length) % allClues.length;
-
-    setActiveClue(allClues[prev]);
-    setDirection(allClues[prev].dir);
-  };
-
-  const handleNextClue = () => {
-    if (!puzzle) return;
-
-    const allClues = [
-      ...puzzle.clues.across.map((c) => ({ ...c, dir: "across" })),
-      ...puzzle.clues.down.map((c) => ({ ...c, dir: "down" })),
-    ];
-
-    if (!activeClue) {
-      setActiveClue(allClues[0]);
-      setDirection(allClues[0].dir);
-      return;
-    }
-
-    const idx = allClues.findIndex(
-      (c) => c.num === activeClue.num && c.dir === activeClue.dir
-    );
-    const next = (idx + 1) % allClues.length;
-
-    setActiveClue(allClues[next]);
-    setDirection(allClues[next].dir);
-  };
-
   // === SPLASH SCREEN ===
   if (phase === "splash") {
     return (
@@ -263,7 +224,7 @@ export default function App() {
         }}
       >
         <img
-          src={prefersDark ? splashDark : splashLight}
+          src={splashDark}
           alt="Crossword Generate+ Splash"
           style={{
             width: "80%",
@@ -278,7 +239,7 @@ export default function App() {
 
   // === WORDSTORM START SCREEN ===
   if (phase === "start") {
-    return <WordStormStart onStart={handleGenerate} />;
+    return <WordStormStart onStart={handleGenerate} loading={loading} />;
   }
 
   // === CROSSWORD GAME PHASE ===
@@ -286,7 +247,9 @@ export default function App() {
     const goToNextClue = (activeClue, clues, answers) => {
       const isAcross = activeClue.dir === "across";
       const currentList = isAcross ? clues.across : clues.down;
-      const currentIndex = currentList.findIndex((c) => c.num === activeClue.num);
+      const currentIndex = currentList.findIndex(
+        (c) => c.num === activeClue.num
+      );
 
       for (let i = currentIndex + 1; i < currentList.length; i++) {
         const next = currentList[i];
@@ -302,49 +265,63 @@ export default function App() {
       return null;
     };
 
-    // make a flat list in the order you want
-    const allClues = [
-      ...puzzle.clues.across,
-      ...puzzle.clues.down,
-    ];
+    const allClues = [...puzzle.clues.across, ...puzzle.clues.down];
 
-    // find current index
+    const isClueSolved = (clue) => isWordCorrect(clue, answers);
+
     const currentIndex = allClues.findIndex(
       (c) => c.num === activeClue?.num && c.dir === activeClue?.dir
     );
 
-    // go to previous clue
     const handlePrevClue = () => {
       if (!allClues.length) return;
-      // if we didn't find it, just go to first
+
       if (currentIndex === -1) {
-        setActiveClue(allClues[0]);
-        setDirection(allClues[0].dir);
+        const lastUnsolved = [...allClues]
+          .reverse()
+          .find((c) => !isClueSolved(c));
+        if (lastUnsolved) {
+          setActiveClue(lastUnsolved);
+          setDirection(lastUnsolved.dir);
+        }
         return;
       }
-      const prevIndex =
-        currentIndex > 0 ? currentIndex - 1 : allClues.length - 1;
-      const prevClue = allClues[prevIndex];
-      setActiveClue(prevClue);
-      setDirection(prevClue.dir);
+
+      let idx = currentIndex;
+      for (let i = 0; i < allClues.length; i++) {
+        idx = (idx - 1 + allClues.length) % allClues.length;
+        const candidate = allClues[idx];
+        if (!isClueSolved(candidate)) {
+          setActiveClue(candidate);
+          setDirection(candidate.dir);
+          return;
+        }
+      }
     };
 
-    // go to next clue
     const handleNextClue = () => {
       if (!allClues.length) return;
+
       if (currentIndex === -1) {
-        setActiveClue(allClues[0]);
-        setDirection(allClues[0].dir);
+        const firstUnsolved = allClues.find((c) => !isClueSolved(c));
+        if (firstUnsolved) {
+          setActiveClue(firstUnsolved);
+          setDirection(firstUnsolved.dir);
+        }
         return;
       }
-      const nextIndex =
-        currentIndex < allClues.length - 1 ? currentIndex + 1 : 0;
-      const nextClue = allClues[nextIndex];
-      setActiveClue(nextClue);
-      setDirection(nextClue.dir);
-    };
 
-    // ✅ Auto-focus first letter of the active clue after grid mounts
+      let idx = currentIndex;
+      for (let i = 0; i < allClues.length; i++) {
+        idx = (idx + 1) % allClues.length;
+        const candidate = allClues[idx];
+        if (!isClueSolved(candidate)) {
+          setActiveClue(candidate);
+          setDirection(candidate.dir);
+          return;
+        }
+      }
+    };
 
     return (
       <div className="app">
@@ -361,7 +338,9 @@ export default function App() {
           </button>
         </div>
 
-        <p className="tag">Topic: <strong>{puzzle.topic}</strong></p>
+        <p className="tag">
+          Topic: <strong>{puzzle.topic}</strong>
+        </p>
 
         {error && <div className="error">{error}</div>}
 
@@ -379,25 +358,20 @@ export default function App() {
           <button
             className="btn-small"
             disabled={!activeClue}
-            // 🖱️ Desktop: show while held
             onMouseDown={(e) => {
-              // Don’t let the button steal focus away from the grid cell
               e.preventDefault();
               setShowClueAnswer(true);
             }}
             onMouseUp={() => {
               setShowClueAnswer(false);
-              // just in case focus moved, force it back to the active cell
               refocusGrid();
             }}
             onMouseLeave={() => {
-              // if they drag off the button while holding
               setShowClueAnswer(false);
               refocusGrid();
             }}
-            // 📱 Touch: show while finger is down
             onTouchStart={(e) => {
-              e.preventDefault(); // again, prevent focus steal
+              e.preventDefault();
               setShowClueAnswer(true);
             }}
             onTouchEnd={() => {
@@ -408,7 +382,8 @@ export default function App() {
             Show Clue Answer
           </button>
 
-          <button className="btn-small"
+          <button
+            className="btn-small"
             onClick={() => {
               window.print();
               setTimeout(() => refocusGrid(), 0);
@@ -418,6 +393,7 @@ export default function App() {
           </button>
         </div>
 
+        {/* GRID + CLUES SIDE BY SIDE */}
         <div className="grid-and-clues">
           <CrosswordGrid
             grid={puzzle.grid}
@@ -456,7 +432,12 @@ export default function App() {
                     setDirection(c.dir);
                   }}
                   className={`
-                    ${activeClue?.num === c.num && activeClue?.dir === "across" ? "active-clue" : ""}
+                    ${
+                      activeClue?.num === c.num &&
+                      activeClue?.dir === "across"
+                        ? "active-clue"
+                        : ""
+                    }
                     ${isWordCorrect(c, answers) ? "solved" : ""}
                   `}
                   style={{ cursor: "pointer" }}
@@ -477,7 +458,12 @@ export default function App() {
                     setDirection(c.dir);
                   }}
                   className={`
-                    ${activeClue?.num === c.num && activeClue?.dir === "down" ? "active-clue" : ""}
+                    ${
+                      activeClue?.num === c.num &&
+                      activeClue?.dir === "down"
+                        ? "active-clue"
+                        : ""
+                    }
                     ${isWordCorrect(c, answers) ? "solved" : ""}
                   `}
                   style={{ cursor: "pointer" }}
