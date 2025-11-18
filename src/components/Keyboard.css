@@ -91,9 +91,9 @@
   }
 
   .key {
-    width: 32px;
-    height: 36px;
-    font-size: 0.8rem;
+    width: 36px;
+    height: 40px;
+    font-size: 1rem;
   }
 
   .key.special {
