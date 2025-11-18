@@ -239,6 +239,32 @@
   /* ===========================================
      PUZZLE LAYOUT
      =========================================== */
+  /* Grid + ClueBar + Keyboard go in a column */
+  .crossword-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    /* 🔹 Default: large screens → left-aligned */
+    align-items: flex-start;
+  }
+
+  /* On small screens, center this column */
+  @media (max-width: 900px) {
+    .crossword-wrapper {
+      align-items: center;  /* ✅ grid, clue bar, keyboard share a center line */
+    }
+  }
+
+  /* Large screens: two columns (left = crossword, right = clues list) */
+  .grid-and-clues {
+    display: grid;
+    grid-template-columns: auto minmax(260px, 340px);
+    gap: 18px;
+    align-items: flex-start;
+    justify-content: flex-start;  /* ✅ keep the whole block toward the left */
+  }
+  
   .puzzle-wrap {
     display: flex;
     flex-direction: column;
@@ -246,12 +272,12 @@
   }
   .topic { color: var(--ink-dim); }
   
-  .grid-and-clues {
+  /*.grid-and-clues > :first-child {
     display: grid;
     grid-template-columns: auto minmax(260px, 340px);
     gap: 18px;
     align-items: flex-start;
-  }
+  } */
   
   /* ===========================================
      CROSSWORD GRID
@@ -452,15 +478,24 @@
      RESPONSIVE
      =========================================== */
 
-  /* Stack grid over clues only on narrow screens */
+  /* Stack grid, clue bar, keyboard, and clues in one centered column on narrow screens */
   @media (max-width: 900px) {
     .grid-and-clues {
-      grid-template-columns: 1fr;   /* grid and clues in one column */
-      gap: 12px;
+      grid-template-columns: 1fr;   /* single column */
+      gap: 16px;
+      justify-items: center;        /* ✅ center children horizontally */
     }
 
+    /* Ensure the grid itself is centered */
+    .grid {
+      margin: 0 auto;
+    }
+
+    /* Clues list: full width but centered and readable */
     .clues {
       margin-top: 16px;
+      width: 100%;
+      max-width: 480px;
     }
   }
 
