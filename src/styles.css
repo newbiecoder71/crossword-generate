@@ -247,6 +247,8 @@
 
     /* 🔹 Default: large screens → left-aligned */
     align-items: flex-start;
+    width: 100%;
+    max-width: 520px;
   }
 
   /* On small screens, center this column */
@@ -255,6 +257,26 @@
       align-items: center;  /* ✅ grid, clue bar, keyboard share a center line */
     }
   }
+
+  @media (max-width: 600px) {
+    .crossword-wrapper {
+      align-items: center;      /* center grid + clue bar + keyboard together */
+      width: 100vw;             /* fill the viewport width */
+      max-width: 100vw;
+      padding: 0 4px;           /* tiny side padding so nothing touches the edge */
+      overflow-x: hidden;       /* prevent sideways scrolling */
+    }
+  
+    .grid {
+      max-width: 100%;
+    }
+  
+    .clue-bar,
+    .keyboard-container {
+      width: 100%;
+      max-width: 480px;         /* nice readable width */
+    }
+  }  
 
   /* Large screens: two columns (left = crossword, right = clues list) */
   .grid-and-clues {
@@ -527,8 +549,8 @@
   /* Make grid responsive on small screens */
   @media (max-width: 480px) {
     .cell {
-      width: min(2rem, 7vw);
-      height: min(2rem, 7vw);
+      width: min(2rem, 5.5vw);
+      height: min(2rem, 5.5vw);
     }
     .cell-input {
       font-size: 0.9rem;
