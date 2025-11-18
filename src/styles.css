@@ -480,8 +480,14 @@
 
   /* Prevent horizontal overflow on the whole page */
   html, body {
-    max-width: 100vw;
+    width: 100%;
+    max-width: 100%;
     overflow-x: hidden;
+  }
+
+  /* Prevent child containers from forcing sideways scroll */
+  .app, .crossword-wrapper, .grid, .clue-bar, .keyboard-container {
+    max-width: 100%;
   }
   
   /* Stack grid, clue bar, keyboard, and clues in one centered column on narrow screens */
@@ -517,6 +523,18 @@
       width: 100%;
     }
   }
+
+  /* Make grid responsive on small screens */
+  @media (max-width: 480px) {
+    .cell {
+      width: min(2rem, 7vw);
+      height: min(2rem, 7vw);
+    }
+    .cell-input {
+      font-size: 0.9rem;
+    }
+  }
+
 
   /* ===========================================
      END SCREEN
