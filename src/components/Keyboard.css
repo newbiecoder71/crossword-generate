@@ -64,58 +64,40 @@
    SMALL SCREENS
    ====================================== */
 
-/* Mobile keyboard layout */
 @media (max-width: 600px) {
   .keyboard-container {
-    width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
-    box-sizing: border-box;
+    padding-inline: 4px;
   }
 
-  /* Make rows wrap when needed */
   .keyboard-row {
-    display: flex;
-    flex-wrap: wrap;     /* ⭐ CRITICAL: allows keys to wrap */
-    justify-content: center;
     gap: 0.3rem;
-    width: 100%;
   }
 
-  /* Make keys flexible instead of fixed-width */
   .key {
-    flex: 1 1 10%;       /* ⭐ Keys SHRINK and WRAP instead of overflowing */
-    min-width: 28px;     /* Minimum tap size */
+    width: 36px;
     height: 40px;
     font-size: 0.9rem;
-    box-sizing: border-box;
-    text-align: center;
   }
 
-  /* Special keys stretch too */
   .key.special {
-    flex: 2 1 20%;
-    min-width: 48px;
-    font-size: 0.85rem;
+    width: 72px;
   }
 }
 
-/* Smaller phones */
 @media (max-width: 480px) {
   .keyboard-row {
     gap: 0.25rem;
   }
 
   .key {
-    flex: 1 1 10%;
-    min-width: 26px;
-    height: 38px;
-    font-size: 0.9rem;
+    width: 36px;
+    height: 40px;
+    font-size: 1rem;
   }
 
   .key.special {
-    flex: 2 1 20%;
-    min-width: 44px;
+    width: 64px;
     font-size: 0.75rem;
   }
 }
