@@ -64,7 +64,7 @@
    SMALL SCREENS
    ====================================== */
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .keyboard-container {
     max-width: 100%;
     padding-inline: 4px;
