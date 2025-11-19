@@ -270,6 +270,18 @@
     .grid {
       max-width: 100%;
     }
+
+    /* ---- Keyboard wrapper: keep inside phone screen ---- */
+    @media (max-width: 600px) {
+      .crossword-wrapper .keyboard-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 4px;
+        margin: 0 auto;
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+    }
   
     /*.clue-bar,
     .keyboard-container {

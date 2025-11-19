@@ -11,7 +11,7 @@
   gap: 0.5rem;
   position: relative;      /* stays within crossword flow */
   width: 100%;
-  max-width: 480px;        /* keep it from getting too wide on tablets */
+  max-width: 450px;        /* keep it from getting too wide on tablets */
   margin-inline: auto;
 }
 
@@ -64,40 +64,58 @@
    SMALL SCREENS
    ====================================== */
 
+/* Mobile keyboard layout */
 @media (max-width: 600px) {
   .keyboard-container {
+    width: 100%;
     max-width: 100%;
-    padding-inline: 4px;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
+  /* Make rows wrap when needed */
   .keyboard-row {
+    display: flex;
+    flex-wrap: wrap;     /* ⭐ CRITICAL: allows keys to wrap */
+    justify-content: center;
     gap: 0.3rem;
+    width: 100%;
   }
 
+  /* Make keys flexible instead of fixed-width */
   .key {
-    width: 36px;
+    flex: 1 1 10%;       /* ⭐ Keys SHRINK and WRAP instead of overflowing */
+    min-width: 28px;     /* Minimum tap size */
     height: 40px;
     font-size: 0.9rem;
+    box-sizing: border-box;
+    text-align: center;
   }
 
+  /* Special keys stretch too */
   .key.special {
-    width: 72px;
+    flex: 2 1 20%;
+    min-width: 48px;
+    font-size: 0.85rem;
   }
 }
 
+/* Smaller phones */
 @media (max-width: 480px) {
   .keyboard-row {
     gap: 0.25rem;
   }
 
   .key {
-    width: 36px;
-    height: 40px;
-    font-size: 1rem;
+    flex: 1 1 10%;
+    min-width: 26px;
+    height: 38px;
+    font-size: 0.9rem;
   }
 
   .key.special {
-    width: 64px;
+    flex: 2 1 20%;
+    min-width: 44px;
     font-size: 0.75rem;
   }
 }
