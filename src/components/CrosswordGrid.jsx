@@ -385,15 +385,6 @@ export default function CrosswordGrid({
           inline: "center",
         });
       }
-
-      // 🔍 Optional: add a tiny zoom pulse on the grid
-      const gridEl = document.querySelector(".grid");
-      if (gridEl) {
-        gridEl.classList.add("grid-zoomed");
-        setTimeout(() => {
-          gridEl.classList.remove("grid-zoomed");
-        }, 180);
-      }
     }
   };
 

@@ -551,12 +551,12 @@
     .cell {
       width: min(2rem, 5vw);
       height: min(2rem, 5vw);
+      transform: scale(1.25);
     }
     .cell-input {
       font-size: 0.9rem;
     }
   }
-
 
   /* ===========================================
      END SCREEN
