@@ -365,18 +365,37 @@ export default function CrosswordGrid({
     handleInput(r, c, key); // letters overwrite + (maybe) advance
   };
 
+  // Make sure you have activeCell / setActiveCell and inputRefs in scope
+  // and that inputRefs.current[r][c] is a ref object (it is, from your input code)
+
   const handleCellClick = (r, c) => {
-    const target = findClueForCell(r, c);
-  
-    if (target) {
-      setActiveClue(target);
-      setDirection(target.dir);
+    const id = `${r}-${c}`;
+    setActiveCell(id);
+
+    // Only do the scroll/zoom on small screens (phones/tablets)
+    if (window.innerWidth <= 900) {
+      // Get the actual input element from your ref grid
+      const refObj = inputRefs.current?.[r]?.[c];
+      const el = refObj?.current ?? refObj; // depending on how you created refs
+
+      if (el && el.scrollIntoView) {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      }
+
+      // 🔍 Optional: add a tiny zoom pulse on the grid
+      const gridEl = document.querySelector(".grid");
+      if (gridEl) {
+        gridEl.classList.add("grid-zoomed");
+        setTimeout(() => {
+          gridEl.classList.remove("grid-zoomed");
+        }, 180);
+      }
     }
-  
-    // keep the clicked cell highlighted immediately
-    setActiveCell(`${r}-${c}`);
-    // (focus will be handled by your guarded effect and/or typing)
-  };  
+  };
 
   // ---- Render a solution letter if needed ----
   function solutionLetter(r, c, placements) {
