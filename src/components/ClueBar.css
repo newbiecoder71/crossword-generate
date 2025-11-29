@@ -1,117 +1,67 @@
-/* ======================================
-   CLUE BAR
-   ====================================== */
+/* Outer bar layout */
+.clue-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0f172a;
+  border-top: 1px solid #1e3a8a;
+  padding: 10px;
+  color: #f1f5f9;
+}
 
-   .clue-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: #0f172a;
-    border: 1px solid #1e3a8a;
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin-top: 12px;
-  
-    /* 🔧 keep the bar from being super long */
-    max-width: min(420px, 100%);
+/* Buttons */
+.clue-btn {
+  background: #1e293b;
+  border: 1px solid #1e3a8a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #f8fafc;
+}
+
+/* Content wrapper */
+.clue-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* REQUIRED for scrolling */
+}
+
+/* Labels */
+.clue-num,
+.clue-dir {
+  font-size: 0.75rem;
+  color: #93c5fd;
+  margin-bottom: 2px;
+}
+
+/* ------------------------------
+   MARQUEE — AUTO SCROLLING
+   ------------------------------ */
+
+/* Scroll window */
+.clue-marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+/* Scrolling text */
+.clue-text {
+  display: inline-block;
+  padding-left: 100%;          /* Start offscreen right */
+  animation: clue-scroll 12s linear infinite;
+  color: #f8fafc;              /* DARKER TEXT so you can see it */
+}
+
+/* Animation */
+@keyframes clue-scroll {
+  0% {
+    transform: translateX(0%);
   }
-  
-  /* Nav buttons (prev / next) */
-  .clue-btn {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 9999px;
-    background: #1e3a8a;
-    color: #fff;
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  100% {
+    transform: translateX(-100%);
   }
-  
-  /* Content area */
-  .clue-content {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: 1;
-    min-width: 0; /* allow shrinking */
-  }
-  
-  /* Scoped so they don't clash with main clue list styles */
-  .clue-bar .clue-num {
-    background: rgba(148, 163, 184, 0.15);
-    border-radius: 9999px;
-    padding: 2px 8px;
-    font-size: 0.9rem;
-    color: #e2e8f0;
-    white-space: nowrap;
-  }
-  
-  .clue-bar .clue-dir {
-    color: #94a3b8;
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
-  
-  /* 🔥 Marquee container – clamps width */
-  .clue-marquee {
-    flex: 1;
-    overflow: hidden;             /* hide overflow */
-    max-width: 100%;
-  }
-  
-  /* Base clue text – no scrolling by default */
-  .clue-bar .clue-text {
-    display: inline-block;
-    color: #fff;
-    font-size: 1.1rem;
-    white-space: nowrap;
-  }
-  
-  /* Only scroll when this class is present */
-  .clue-bar .clue-text--scrolling {
-    animation: clue-scroll 10s linear infinite;
-  }
-  
-  /* Banner-style scroll: leftward */
-  @keyframes clue-scroll {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-100%);
-    }
-  }
-  
-  /* ======================================
-     RESPONSIVE
-     ====================================== */
-  
-  @media (max-width: 768px) {
-    .clue-bar {
-      padding: 6px 10px;
-      gap: 6px;
-      max-width: min(360px, 100%);
-    }
-  
-    .clue-bar .clue-text {
-      font-size: 1.3rem;
-    }
-  
-    .clue-btn {
-      width: 30px;
-      height: 30px;
-      font-size: 0.8rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .clue-bar {
-      max-width: min(320px, 100%);
-    }
-  }
-  
+}
