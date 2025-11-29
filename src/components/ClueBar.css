@@ -36,31 +36,32 @@
   margin-bottom: 2px;
 }
 
-/* --- MARQUEE SYSTEM --- */
-
-/* Visible window */
-.clue-marquee {
+/* Only apply marquee inside the mobile clue bar */
+.clue-bar .clue-marquee {
   width: 100%;
   overflow: hidden;
-  white-space: nowrap;
   position: relative;
-  display: block;
-  mask-image: none;         /* remove fade mask – it was hiding text */
+  white-space: nowrap;
 }
 
-/* Scrolling text */
-.clue-text {
+/* Text inside ClueBar only */
+.clue-bar .clue-text {
   display: inline-block;
-  padding-left: 20px;       /* reduced from 100% — fixes disappearing text */
-  animation: clue-scroll 12s linear infinite;
-  color: #ffffff;           /* bright white – guaranteed visible */
+  padding-left: 0;
+  color: #ffffff;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-/* Animation */
+/* Only add animation when the 'scrolling' class is applied */
+.clue-bar .clue-text.scrolling {
+  animation: clue-scroll 12s linear infinite;
+}
+
+/* The scrolling animation */
 @keyframes clue-scroll {
   0% {
-    transform: translateX(100%); 
+    transform: translateX(100%);
   }
   100% {
     transform: translateX(-100%);
