@@ -42,10 +42,15 @@
 
 .clue-text {
   display: flex;
-  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;       /* allows finger drag scrolling */
+  white-space: nowrap;    /* keeps text on one line */
   gap: 6px;
-  font-size: 0.9rem;
-  color: #f8fafc;
+  scrollbar-width: none;  /* hide scrollbar (Firefox) */
+}
+
+.clue-text::-webkit-scrollbar {
+  display: none;          /* hide scrollbar (Chrome/Safari) */
 }
 
 .bubble-num {
