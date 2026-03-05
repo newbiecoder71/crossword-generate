@@ -118,7 +118,6 @@ export default function App() {
   );
 
   const [fadeOut, setFadeOut] = useState(false);
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const { width, height } = useWindowSize();
 
   useEffect(() => {
@@ -440,7 +439,7 @@ export default function App() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: prefersDark ? "#001F3F" : "#FFFFFF",
+          backgroundColor: "#001F3F",
           opacity: fadeOut ? 0 : 1,
           transition: "opacity 0.8s ease-in-out",
         }}
