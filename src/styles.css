@@ -420,6 +420,7 @@
   justify-content: center;
   background: #dbeafe;
   box-shadow: inset 0 0 2px rgba(0,0,0,0.18);
+  overflow: hidden;
 }
 .cell.block { background: #111; }
 
@@ -436,20 +437,24 @@
   color: #1e3a8a;
 }
 .cell-input {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: none;
   margin: 0;
-  padding: 0;
+  padding: 0 !important;
   display: block;
   text-align: center;
   text-indent: 0;
-  line-height: 1;
+  line-height: 1.8rem;
   font-size: 1rem;
   font-weight: bold;
   background: transparent;
   color: #1e3a8a;
   text-transform: capitalize;
+  appearance: none;
+  -webkit-appearance: none;
 }
   .cell-input:focus {
     outline: none;
@@ -459,10 +464,15 @@
   /* Focused cell highlight (very sky blue) */
 .cell.active-cell .cell-input {
   background-color: #bfdbfe;
-  border: 2px solid #3b82f6;
-  box-shadow: 0 0 0 2px #1d4ed8 inset, 0 0 10px rgba(59, 130, 246, 0.7);
+  border: none;
+  box-shadow: none;
   color: #111827;
   transition: background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.cell.active-cell {
+  z-index: 2;
+  box-shadow: inset 0 0 0 2px #1d4ed8, 0 0 10px rgba(59, 130, 246, 0.7);
 }
 
   /* Completed word effect (3D-ish) */
