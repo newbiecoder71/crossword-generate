@@ -283,10 +283,11 @@ export default function CrosswordGrid({
         return;
       }
 
-      const frameRect = frame.getBoundingClientRect();
-      const layerRect = layer.getBoundingClientRect();
-      const cellRect = probeCell.getBoundingClientRect();
-      const cellSize = cellRect.width;
+      const frameWidth = frame.clientWidth;
+      const frameHeight = frame.clientHeight;
+      const layerWidth = layer.scrollWidth;
+      const layerHeight = layer.scrollHeight;
+      const cellSize = probeCell.offsetWidth;
       if (!cellSize) {
         setGridZoomStyle({});
         return;
@@ -302,11 +303,11 @@ export default function CrosswordGrid({
       const focusX = (centerCol + 0.5) * cellSize;
       const focusY = (centerRow + 0.5) * cellSize;
 
-      let tx = frameRect.width / 2 - focusX * zoom;
-      let ty = frameRect.height / 2 - focusY * zoom;
+      let tx = frameWidth / 2 - focusX * zoom;
+      let ty = frameHeight / 2 - focusY * zoom;
 
-      const minTx = frameRect.width - layerRect.width * zoom;
-      const minTy = frameRect.height - layerRect.height * zoom;
+      const minTx = frameWidth - layerWidth * zoom;
+      const minTy = frameHeight - layerHeight * zoom;
       tx = Math.min(0, Math.max(minTx, tx));
       ty = Math.min(0, Math.max(minTy, ty));
 
@@ -318,7 +319,7 @@ export default function CrosswordGrid({
     updateZoom();
     window.addEventListener("resize", updateZoom);
     return () => window.removeEventListener("resize", updateZoom);
-  }, [activeClue, grid, answers, refsReady]);
+  }, [activeClue, grid, refsReady]);
 
   // ---- Input handlers ----
   const handleInput = (r, c, val) => {
