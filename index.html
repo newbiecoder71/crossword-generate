@@ -2,22 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Light Theme Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon-light.ico" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="/icon-light-512.png" sizes="512x512" media="(prefers-color-scheme: light)">
-    <link rel="icon" type="image/png" href="/icon-light-256.png" sizes="256x256" media="(prefers-color-scheme: light)">
-    <link rel="apple-touch-icon" href="/icon-light-512.png" media="(prefers-color-scheme: light)">
-
-    <!-- Dark Theme Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon-dark.ico" media="(prefers-color-scheme: dark)">
-    <link rel="icon" type="image/png" href="/icon-dark-512.png" sizes="512x512" media="(prefers-color-scheme: dark)">
-    <link rel="icon" type="image/png" href="/icon-dark-256.png" sizes="256x256" media="(prefers-color-scheme: dark)">
-    <link rel="apple-touch-icon" href="/icon-dark-512.png" media="(prefers-color-scheme: dark)">
-
-    <!-- Optional Fallback (Older Browsers) -->
-    <link rel="icon" type="image/x-icon" href="/favicon-light.ico">
+    <!-- Always-dark launch assets to avoid white startup flash on mobile -->
+    <link rel="icon" type="image/x-icon" href="/favicon-dark.ico">
+    <link rel="icon" type="image/png" href="/icon-dark-512.png" sizes="512x512">
+    <link rel="icon" type="image/png" href="/icon-dark-256.png" sizes="256x256">
+    <link rel="apple-touch-icon" href="/icon-dark-512.png">
     <meta name="theme-color" content="#001F3F" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="color-scheme" content="dark" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>
       document.documentElement.classList.add("boot-dark");
