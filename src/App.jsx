@@ -10,6 +10,7 @@ import {
 import { getWordsAndClues } from "./utils/ai.js";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
+import splashDark from "./assets/splash-dark.png";
 import WordStormStart from "./components/WordStormStart.jsx";
 
 const clueKey = (clue) =>
@@ -76,7 +77,7 @@ const getAutoWordCount = () => {
 };
 
 export default function App() {
-  const [phase, setPhase] = useState("start"); // start -> game
+  const [phase, setPhase] = useState("splash"); // splash -> start -> game
 
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
@@ -116,11 +117,28 @@ export default function App() {
     () => localStorage.getItem("theme") || "system"
   );
 
+  const [fadeOut, setFadeOut] = useState(false);
   const { width, height } = useWindowSize();
 
   useEffect(() => {
-    document.documentElement.classList.remove("boot-dark");
-  }, []);
+    if (phase === "start" || phase === "game") {
+      document.documentElement.classList.remove("boot-dark");
+    }
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "splash") return;
+
+    setUnfinishedGames(readUnfinishedGames());
+
+    const fadeTimer = setTimeout(() => setFadeOut(true), 2000);
+    const hideTimer = setTimeout(() => setPhase("start"), 2800);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [phase]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -157,8 +175,9 @@ export default function App() {
   }, [freeClueUses]);
 
   useEffect(() => {
+    if (phase !== "start" && phase !== "game") return;
     setUnfinishedGames(readUnfinishedGames());
-  }, []);
+  }, [phase]);
 
   useEffect(() => {
     if (!puzzle || !currentSaveId) return;
@@ -421,6 +440,34 @@ export default function App() {
     setStartExiting(false);
     setPhase("start");
   };
+
+  if (phase === "splash") {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          width: "100vw",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#001F3F",
+          opacity: fadeOut ? 0 : 1,
+          transition: "opacity 0.8s ease-in-out",
+        }}
+      >
+        <img
+          src={splashDark}
+          alt="Crossword Generate+ Splash"
+          style={{
+            width: "80%",
+            maxWidth: "700px",
+            borderRadius: "40px",
+            transition: "opacity 0.8s ease-in-out",
+          }}
+        />
+      </div>
+    );
+  }
 
   if (phase === "start") {
     return (
