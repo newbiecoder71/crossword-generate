@@ -77,11 +77,37 @@ export default function CrosswordGrid({
     }
   };
 
+  const isCellLockedBySolvedWord = (r, c, ans) => {
+    if (grid[r]?.[c] === "#") return false;
+    return placements?.some((p) => {
+      const inThisWord =
+        (p.dir === "across" &&
+          p.row === r &&
+          c >= p.col &&
+          c < p.col + p.word.length) ||
+        (p.dir === "down" &&
+          p.col === c &&
+          r >= p.row &&
+          r < p.row + p.word.length);
+      return inThisWord && isWordCorrect(p, ans);
+    });
+  };
+
+  const findPrevEditableCell = (r, c, ans) => {
+    let prev = findPrevCell(r, c);
+    while (prev) {
+      const [pr, pc] = prev;
+      if (!isCellLockedBySolvedWord(pr, pc, ans)) return prev;
+      prev = findPrevCell(pr, pc);
+    }
+    return null;
+  };
+
   const deleteWithBackspace = (r, c) => {
     suppressFocusRef.current = true;           // prevent effect from jumping
     const next = answers.map((row) => [...row]);
 
-    if (next[r][c]) {
+    if (next[r][c] && !isCellLockedBySolvedWord(r, c, next)) {
       next[r][c] = "";
       setAnswers(next);
       inputRefs.current?.[r]?.[c]?.current?.focus();
@@ -90,7 +116,7 @@ export default function CrosswordGrid({
       return;
     }
 
-    const prev = findPrevCell(r, c);
+    const prev = findPrevEditableCell(r, c, next);
     if (prev) {
       const [pr, pc] = prev;
       if (next[pr][pc]) next[pr][pc] = "";
