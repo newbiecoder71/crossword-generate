@@ -10,7 +10,6 @@ import {
 import { getWordsAndClues } from "./utils/ai.js";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
-import splashDark from "./assets/splash-dark.png";
 import WordStormStart from "./components/WordStormStart.jsx";
 
 const clueKey = (clue) =>
@@ -78,7 +77,6 @@ const getAutoWordCount = () => {
 
 export default function App() {
   const [phase, setPhase] = useState("start"); // start -> game
-  const [showStartupSplash, setShowStartupSplash] = useState(true);
 
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
@@ -121,15 +119,10 @@ export default function App() {
   const { width, height } = useWindowSize();
 
   useEffect(() => {
-    if (!showStartupSplash && (phase === "start" || phase === "game")) {
+    if (phase === "start" || phase === "game") {
       document.documentElement.classList.remove("boot-dark");
     }
-  }, [phase, showStartupSplash]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowStartupSplash(false), 2400);
-    return () => clearTimeout(timer);
-  }, []);
+  }, [phase]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -433,31 +426,6 @@ export default function App() {
   };
 
   if (phase === "start") {
-    if (showStartupSplash) {
-      return (
-        <div
-          style={{
-            height: "100vh",
-            width: "100vw",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#001F3F",
-          }}
-        >
-          <img
-            src={splashDark}
-            alt="Crossword Generate+ Splash"
-            style={{
-              width: "80%",
-              maxWidth: "700px",
-              borderRadius: "40px",
-            }}
-          />
-        </div>
-      );
-    }
-
     return (
       <WordStormStart
         onStart={handleGenerate}
