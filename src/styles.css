@@ -451,11 +451,24 @@
   font-size: 1rem;
   font-weight: bold;
   background: transparent;
-  color: #1e3a8a;
+  color: transparent;
   text-transform: capitalize;
   vertical-align: middle;
   appearance: none;
   -webkit-appearance: none;
+  caret-color: #1e3a8a;
+}
+
+.cell-letter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #1e3a8a;
+  pointer-events: none;
 }
   .cell-input:focus {
     outline: none;
@@ -467,26 +480,31 @@
   background-color: #bfdbfe;
   border: none;
   box-shadow: none;
-  color: #111827;
   transition: background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
 }
 
 .cell.active-cell {
   z-index: 2;
-  outline: 3px solid #1d4ed8;
-  outline-offset: -3px;
-  box-shadow: inset 0 0 0 1px #60a5fa, 0 0 12px rgba(59, 130, 246, 0.8);
+  border: 3px solid #1d4ed8;
+  box-shadow: 0 0 0 1px #93c5fd, 0 0 12px rgba(59, 130, 246, 0.8);
+}
+
+.cell.active-cell .cell-letter {
+  color: #111827;
 }
 
   /* Completed word effect (3D-ish) */
 .cell.correct-word .cell-input {
   background: linear-gradient(145deg,#1e40af,#1e3a8a);
-  color: #f8fafc;
   font-weight: bold;
   box-shadow: 0 4px 8px rgba(0,0,0,0.4),
               inset 0 0 6px rgba(255,255,255,0.2);
   transform: translateY(0px);
   border-radius: 0;
+}
+
+.cell.correct-word .cell-letter {
+  color: #f8fafc;
 }
 
   /* Keep active-clue highlight visible even when word is correct */

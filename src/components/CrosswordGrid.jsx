@@ -467,6 +467,13 @@ export default function CrosswordGrid({
                 return inThisWord && isWordCorrect(p, answers);
               });
 
+              const displayChar =
+                showSolution
+                  ? solutionLetter(r, c, placements)
+                  : showClueAnswer && isInActiveClue
+                  ? solutionLetter(r, c, placements)
+                  : val;
+
               return (
                 <div
                   className={`cell ${ch === "#" ? "block" : ""} ${
@@ -484,13 +491,7 @@ export default function CrosswordGrid({
                       type="text"
                       maxLength="1"
                       className="cell-input"
-                      value={
-                        showSolution
-                          ? solutionLetter(r, c, placements)
-                          : showClueAnswer && isInActiveClue
-                          ? solutionLetter(r, c, placements)
-                          : val
-                      }
+                      value={displayChar}
                       readOnly={window.innerWidth < 900}
                       inputMode={window.innerWidth < 900 ? "none" : "text"}
                     
@@ -505,8 +506,9 @@ export default function CrosswordGrid({
                       autoComplete="off"
                       autoCorrect="off"
                       autoCapitalize="characters"
-                    />                  
+                    />
                   )}
+                  {ch !== "#" && <span className="cell-letter">{displayChar}</span>}
                 </div>
               );
             })}
