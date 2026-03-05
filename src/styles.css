@@ -58,11 +58,14 @@
     color: var(--ink);
   }
   
-  .app {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 24px;
-  }
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
   
   h1 {
     margin: 0 0 4px;
@@ -138,12 +141,80 @@
     color: var(--ink-dim);
   }
 
-  .theme-toggle {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 100;
+.theme-toggle {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+}
+
+.score-board {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 120;
+  min-width: 140px;
+  text-align: center;
+  padding: 0.6rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(145deg, #1f2937, #111827);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.score-burst-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 115;
+}
+
+.score-burst {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  min-width: 58px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.2), 0 12px 24px rgba(0, 0, 0, 0.28);
+  animation: score-race 1.2s ease-out forwards;
+}
+
+.score-burst.plus {
+  background: linear-gradient(145deg, #22c55e, #15803d);
+}
+
+.score-burst.minus {
+  background: linear-gradient(145deg, #ef4444, #b91c1c);
+}
+
+@keyframes score-race {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 1;
   }
+  70% {
+    transform: translate(
+      calc(-50% + var(--score-dx-70, 0px)),
+      calc(-50% + var(--score-dy-70, 0px))
+    ) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(
+      calc(-50% + var(--score-dx-100, 0px)),
+      calc(-50% + var(--score-dy-100, 0px))
+    ) scale(0.7);
+    opacity: 0;
+  }
+}
   
   .theme-btn {
     background: var(--btn-bg, #222);
@@ -240,16 +311,17 @@
      PUZZLE LAYOUT
      =========================================== */
   /* Grid + ClueBar + Keyboard go in a column */
-  .crossword-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.crossword-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 
-    /* 🔹 Default: large screens → left-aligned */
-    align-items: flex-start;
-    width: 100%;
-    max-width: 520px;
-  }
+  /* Keep puzzle stack centered on all screen sizes */
+  align-items: center;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
 
   /* On small screens, center this column */
   @media (max-width: 900px) {
@@ -262,7 +334,7 @@
     .crossword-wrapper {
       align-items: center;      /* center grid + clue bar + keyboard together */
       width: 100%;             /* fill the viewport width */
-      max-width: 100vh;
+      max-width: 520px;
       padding: 0 4px;           /* tiny side padding so nothing touches the edge */
       overflow-x: hidden;       /* prevent sideways scrolling */
     }
@@ -290,14 +362,24 @@
     /*} */
   }  
 
-  /* Large screens: two columns (left = crossword, right = clues list) */
-  .grid-and-clues {
-    display: grid;
-    grid-template-columns: auto minmax(260px, 340px);
-    gap: 18px;
-    align-items: flex-start;
-    justify-content: flex-start;  /* ✅ keep the whole block toward the left */
-  }
+  /* Game column wrapper */
+.grid-and-clues {
+  display: grid;
+  grid-template-columns: auto;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.game-main {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
   
   .puzzle-wrap {
     display: flex;
@@ -328,51 +410,58 @@
   }
   .grid-row { display: flex; width: fit-content; }
   
-  .cell {
-    position: relative;
-    width: 1.8rem;
-    height: 1.8rem;
-    border: 1px solid var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--tile-bg);
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
-  }
-  .cell.block { background: #111; }
-  .cell-num {
-    position: absolute;
-    top: 2px;
-    left: 3px;
-    font-size: 0.6em;
-    color: var(--accent);
-  }
-  .cell-input {
-    width: 100%;
-    height: 100%;
-    border: none;
-    text-align: center;
-    font-size: 1rem;
-    font-weight: bold;
-    background: transparent;
-    color: var(--accent);
-    text-transform: capitalize;
-  }
+.cell {
+  position: relative;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #dbeafe;
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.18);
+}
+.cell.block { background: #111; }
+
+/* Checkerboard contrast so fillable squares are easier to read */
+.grid-row:nth-child(odd) .cell:not(.block):nth-child(even),
+.grid-row:nth-child(even) .cell:not(.block):nth-child(odd) {
+  background: #c7dcff;
+}
+.cell-num {
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  font-size: 0.6em;
+  color: #1e3a8a;
+}
+.cell-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: bold;
+  background: transparent;
+  color: #1e3a8a;
+  text-transform: capitalize;
+}
   .cell-input:focus {
     outline: none;
     background: transparent;
     caret-color: transparent;
   }
   /* Focused cell highlight (very sky blue) */
-  .cell.active-cell .cell-input {
-    background-color: #cfe9ff;   /* sky blue */
-    border-color: #60a5fa;
-    box-shadow: 0 0 6px rgba(96,165,250,0.4);
-    transition: background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
-  }
+.cell.active-cell .cell-input {
+  background-color: #bfdbfe;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 0 0 2px #1d4ed8 inset, 0 0 10px rgba(59, 130, 246, 0.7);
+  color: #111827;
+  transition: background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
 
   /* Completed word effect (3D-ish) */
-  .cell.correct-word .cell-input {
+.cell.correct-word .cell-input {
     background: linear-gradient(145deg,#1e40af,#1e3a8a);
     color: #f8fafc;
     font-weight: bold;
@@ -437,11 +526,29 @@
   /* ===========================================
      BUTTONS
      =========================================== */
-  .action-buttons {
-    display: flex;
-    gap: 10px;
-    margin: 12px 0;
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0;
+  justify-content: center;
+}
+
+.cell.flash-word-cell .cell-input {
+  animation: solved-flash 0.55s ease-out;
+}
+
+@keyframes solved-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
   }
+  30% {
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.95);
+    background-color: #bbf7d0;
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
   .btn-small {
     background: var(--accent);
     border: none;
@@ -453,11 +560,15 @@
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .btn-small:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-    background: #3b82f6;
-  }
+.btn-small:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  background: #3b82f6;
+}
+
+.quit-btn {
+  background: linear-gradient(145deg, #1e3a8a, #1e40af);
+}
   
   .solution-btn {
     background: var(--accent);

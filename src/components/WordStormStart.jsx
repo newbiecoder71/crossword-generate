@@ -1,31 +1,29 @@
-/* eslint-disable no-unused-vars */
-// @ts-ignore
-
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./WordStorm.css";
 
-export default function WordStormStart({ onStart, loading }) {
+export default function WordStormStart({
+  onStart,
+  loading,
+  startExiting = false,
+  highScore = 0,
+  unfinishedGames = [],
+  onContinue,
+  onNewGame,
+}) {
   const [showInputs, setShowInputs] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
   const [topic, setTopic] = useState("");
-  const [count, setCount] = useState(10);
-  const [showBubble, setShowBubble] = useState(true);
+  const MotionSpan = motion.span;
+  const MotionDiv = motion.div;
 
-  const letters = [
-    ..."CROSSWORD".split(""),
-    " ", // <-- manual space between words
-    ..."GENERATE".split(""),
-    " ", // <-- space before plus sign
-    "+"
-  ];
+  const letters = [..."CROSSWORD".split(""), " ", ..."GENERATE".split(""), " ", "+"];
 
   useEffect(() => {
-    // Delay input fade-in
     const timer = setTimeout(() => setShowInputs(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  // 👀 Make WordBot's pupils follow the mouse
   useEffect(() => {
     const moveEyes = (event) => {
       const eyes = document.querySelectorAll(".speech-eyes .eye");
@@ -39,7 +37,7 @@ export default function WordStormStart({ onStart, loading }) {
         const dx = event.clientX - eyeCenterX;
         const dy = event.clientY - eyeCenterY;
         const angle = Math.atan2(dy, dx);
-        const radius = 4; // how far pupils can move inside the eye
+        const radius = 4;
 
         pupil.style.transform = `translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px)`;
       });
@@ -49,11 +47,15 @@ export default function WordStormStart({ onStart, loading }) {
     return () => window.removeEventListener("mousemove", moveEyes);
   }, []);
 
+  const triggerGenerate = () => {
+    if (!topic.trim() || loading) return;
+    onStart(topic);
+  };
+
   return (
-    <div className="wordstorm-container">
-      {/* Floating background letters */}
+    <div className={`wordstorm-container ${startExiting ? "exit" : ""}`}>
       {Array.from({ length: 30 }).map((_, i) => (
-        <motion.span
+        <MotionSpan
           key={i}
           className="floating-letter"
           initial={{
@@ -76,13 +78,11 @@ export default function WordStormStart({ onStart, loading }) {
           }}
         >
           {String.fromCharCode(65 + Math.floor(Math.random() * 26))}
-        </motion.span>
+        </MotionSpan>
       ))}
 
-      {/* Main assembling title */}
       <div className="wordstorm-title">
         {letters.map((ch, i) => {
-          // random starting edge: top, bottom, left, or right
           const width = typeof window !== "undefined" ? window.innerWidth : 1000;
           const height = typeof window !== "undefined" ? window.innerHeight : 800;
 
@@ -94,19 +94,13 @@ export default function WordStormStart({ onStart, loading }) {
             scale: 2,
             rotate: Math.random() * 360,
           };
-          
+
           return (
-            <motion.span
+            <MotionSpan
               key={i}
               className={`title-letter${ch === " " ? " space" : ""}`}
               initial={start}
-              animate={{
-                x: 0,
-                y: 0,
-                opacity: 1,
-                scale: 1,
-                rotate: 0,
-              }}
+              animate={{ x: 0, y: 0, opacity: 1, scale: 1, rotate: 0 }}
               transition={{
                 delay: 0.08 * i,
                 duration: 1.2,
@@ -115,62 +109,94 @@ export default function WordStormStart({ onStart, loading }) {
               }}
             >
               {ch}
-            </motion.span>
+            </MotionSpan>
           );
         })}
       </div>
 
-      {/* Fade in inputs */}
-      {/* Existing animated input controls */}
+      <div className="start-top-row">
+        <div className="high-score-panel">Highest Score: {highScore}</div>
+        {!showSetup && (
+          <button
+            className="wordstorm-btn new-game-top-btn"
+            onClick={() => {
+              onNewGame?.();
+              setShowSetup(true);
+            }}
+          >
+            New Game
+          </button>
+        )}
+      </div>
+
       <AnimatePresence>
         {showInputs && (
-          <motion.div
+          <MotionDiv
             className="wordstorm-controls"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2 }}
           >
-            <input
-              type="text"
-              placeholder="Type your topic..."
-              className="wordstorm-input"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              autoFocus
-            />
-            <label className="wordstorm-num">
-              Words:{" "}
-              <input
-                type="number"
-                min="10"
-                max="50"
-                value={count}
-                onChange={(e) => setCount(parseInt(e.target.value))}
-              />
-            </label>
-            <button
-              className={`wordstorm-btn ${loading ? "loading" : ""}`}
-              onClick={() => {
-                if (!topic.trim() || loading) return; // don't double-click
-                setShowBubble(false);                 // hide WordBot bubble
-                onStart(topic, count);                // App will set loading=true
-              }}
-              disabled={loading || !topic.trim()}
-            >
-              {loading ? <em>Generating...</em> : "⚡ Generate"}
-            </button>
+            {!showSetup && (
+              <div className="unfinished-list">
+                <h3>Unfinished Games</h3>
+                {unfinishedGames.length === 0 && (
+                  <p className="unfinished-empty">No unfinished games yet.</p>
+                )}
+                {unfinishedGames.map((entry) => (
+                  <div className="unfinished-item" key={entry.saveId}>
+                    <span className="unfinished-topic">{entry.topic || "Untitled Topic"}</span>
+                    <button
+                      className="wordstorm-btn continue-btn"
+                      onClick={() => onContinue?.(entry.saveId)}
+                    >
+                      Continue
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-          </motion.div>
+            {showSetup && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Type your topic..."
+                  className="wordstorm-input"
+                  value={topic}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setTopic(
+                      value ? value.charAt(0).toUpperCase() + value.slice(1) : ""
+                    );
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      triggerGenerate();
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  className={`wordstorm-btn ${loading ? "loading" : ""}`}
+                  onClick={triggerGenerate}
+                  disabled={loading || !topic.trim()}
+                >
+                  {loading ? <em>Generating...</em> : "Generate"}
+                </button>
+              </>
+            )}
+          </MotionDiv>
         )}
       </AnimatePresence>
 
-      {/* 💬 Friendly speech bubble mascot (appears after inputs) */}
       <AnimatePresence>
-        {showInputs && showBubble && (
-          <motion.div
+        {showInputs && showSetup && (
+          <MotionDiv
             className="speech-bubble-container"
-            initial={{ opacity: 0, y: -50 }}      // starts above
-            animate={{ opacity: 1, y: 0 }}        // slides down
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -40 }}
             transition={{ delay: 1.0, duration: 1.2, ease: "easeOut" }}
           >
@@ -183,10 +209,10 @@ export default function WordStormStart({ onStart, loading }) {
                   <div className="pupil"></div>
                 </div>
               </div>
-            <strong>Hey there!</strong> Type a topic and pick your word count — then tap Generate! Let’s create a crossword!
-            <div className="tail"></div>
+              <strong>Hey there!</strong> Type a topic, then tap Generate.
+              <div className="tail"></div>
             </div>
-          </motion.div>
+          </MotionDiv>
         )}
       </AnimatePresence>
     </div>

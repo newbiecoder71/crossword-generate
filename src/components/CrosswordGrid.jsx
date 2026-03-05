@@ -10,14 +10,13 @@ export default function CrosswordGrid({
   answers,
   setAnswers,
   direction,
-  setDirection,           // "across" | "down"
   activeClue,
-  setActiveClue,
-  clues,          // { num, clue, dir, row, col, word }  (represents the current ANSWER span)
   setPuzzleComplete,
   showSolution,
   onWordComplete,
+  onWordMisspelled,
   showClueAnswer,
+  flashClue,
   onPrevClue,
   onNextClue,
   onRefocusReady,
@@ -112,6 +111,15 @@ export default function CrosswordGrid({
     }
   };
 
+  const isClueFilled = (clue, ans) => {
+    if (!clue) return false;
+    let filled = true;
+    forEachCellInClue(clue, (r, c) => {
+      if (!ans?.[r]?.[c]) filled = false;
+    });
+    return filled;
+  };
+
   const clearCurrentWord = () => {
     if (!activeClue) return;
     suppressFocusRef.current = true;
@@ -146,22 +154,6 @@ export default function CrosswordGrid({
     if (onRefocusReady) onRefocusReady(() => refocusActiveCell());
   }, [onRefocusReady, refocusActiveCell]);  
 
-  const findClueForCell = (r, c, preferDir = direction) => {
-    if (!clues) return null;
-  
-    const inAcross = clues.across.find(({ row, col, word }) =>
-      r === row && c >= col && c < col + word.length
-    );
-    const inDown = clues.down.find(({ row, col, word }) =>
-      c === col && r >= row && r < row + word.length
-    );
-  
-    // Prefer the current typing direction if possible, else whichever exists
-    if (preferDir === "across" && inAcross) return inAcross;
-    if (preferDir === "down"   && inDown)   return inDown;
-    return inAcross || inDown || null;
-  };
-  
   const moveWithinActiveClueWithArrows = (key, r, c) => {
     if (!activeClue) return;
 
@@ -257,9 +249,17 @@ export default function CrosswordGrid({
       localStorage.removeItem("crossword-progress");
     }
 
-    // this answer complete?
-    if (activeClue && isWordCorrect(activeClue, next)) {
-      setTimeout(() => onWordComplete?.(activeClue), 150);
+    // score only when a clue transitions from "not full" to "full"
+    if (activeClue) {
+      const wasFilled = isClueFilled(activeClue, answers);
+      const nowFilled = isClueFilled(activeClue, next);
+      if (!wasFilled && nowFilled) {
+        if (isWordCorrect(activeClue, next)) {
+          setTimeout(() => onWordComplete?.(activeClue), 150);
+        } else {
+          onWordMisspelled?.(activeClue);
+        }
+      }
     }
 
     // auto-advance only inside the same clue; skip cells already correct
@@ -426,6 +426,7 @@ export default function CrosswordGrid({
                     r >= activeClue.row &&
                     r < activeClue.row + activeClue.word.length)
                 );
+              const isInFlashWord = !!flashClue && isCellInClue(r, c, flashClue);
 
               const isInCorrectWord = placements?.some((p) => {
                 const inThisWord =
@@ -446,7 +447,7 @@ export default function CrosswordGrid({
                     isActive ? "active-cell" : ""
                   } ${isInActiveClue ? "active-clue-cell" : ""} ${
                     isInCorrectWord ? "correct-word" : ""
-                  }`}
+                  } ${isInFlashWord ? "flash-word-cell" : ""}`}
                   key={`${r}-${c}`}
                 >
                   {num && <span className="cell-num">{num}</span>}

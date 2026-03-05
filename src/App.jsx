@@ -1,7 +1,5 @@
-/* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CrosswordGrid from "./components/CrosswordGrid.jsx";
-import VoiceInput from "./components/VoiceInput.jsx";
 import {
   buildCrossword,
   numberClues,
@@ -11,18 +9,71 @@ import {
 import { getWordsAndClues } from "./utils/ai.js";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
-import splashLight from "./assets/splash-light.png";
 import splashDark from "./assets/splash-dark.png";
 import WordStormStart from "./components/WordStormStart.jsx";
-import FloatingClue from "./components/FloatingClue.jsx";
+
+const clueKey = (clue) =>
+  clue ? `${clue.dir}:${clue.row}:${clue.col}:${clue.word?.length ?? 0}` : null;
+
+const isValidSavedGame = (data) =>
+  !!(data?.grid && data?.numbers && data?.placements && data?.clues);
+const UNFINISHED_GAMES_KEY = "crossword-progress-list";
+
+const readUnfinishedGames = () => {
+  const listRaw = localStorage.getItem(UNFINISHED_GAMES_KEY);
+  let list = [];
+  if (listRaw) {
+    try {
+      const parsed = JSON.parse(listRaw);
+      if (Array.isArray(parsed)) list = parsed.filter(isValidSavedGame);
+    } catch {
+      list = [];
+    }
+  }
+
+  // Backward compatibility with older single-save key
+  const legacyRaw = localStorage.getItem("crossword-progress");
+  if (legacyRaw) {
+    try {
+      const legacy = JSON.parse(legacyRaw);
+      if (
+        isValidSavedGame(legacy) &&
+        !list.some((entry) => entry.saveId && entry.saveId === legacy.saveId)
+      ) {
+        list.push({
+          ...legacy,
+          saveId: legacy.saveId || `${Date.now()}-${Math.random()}`,
+          updatedAt: legacy.updatedAt || Date.now(),
+        });
+      }
+    } catch {
+      // ignore legacy parse failures
+    }
+  }
+
+  return list.sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0));
+};
+
+const writeUnfinishedGames = (list) => {
+  localStorage.setItem(UNFINISHED_GAMES_KEY, JSON.stringify(list));
+};
+
+const getAutoWordCount = () => {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const shortSide = Math.min(width, height);
+
+  if (shortSide <= 420) return 8;
+  if (shortSide <= 540) return 9;
+  if (shortSide <= 700) return 10;
+  if (shortSide <= 900) return 12;
+  return 14;
+};
 
 export default function App() {
-  // === PHASE CONTROL ===
-  const [phase, setPhase] = useState("splash"); // splash → start → game
+  const [phase, setPhase] = useState("splash"); // splash -> start -> game
 
-  // === CROSSWORD STATE ===
   const [topic, setTopic] = useState("");
-  const [count, setCount] = useState(8);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [puzzle, setPuzzle] = useState(null);
@@ -34,10 +85,31 @@ export default function App() {
   const [showClueAnswer, setShowClueAnswer] = useState(false);
   const [refocusGrid, setRefocusGrid] = useState(() => () => {});
 
-  // === THEME ===
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(
+    () => Number(localStorage.getItem("crossword-high-score") || 0)
+  );
+  const [scoreBursts, setScoreBursts] = useState([]);
+  const [scoreBurstPath, setScoreBurstPath] = useState({
+    dx70: "0px",
+    dy70: "0px",
+    dx100: "0px",
+    dy100: "0px",
+  });
+  const [flashClue, setFlashClue] = useState(null);
+  const [scoredClueKeys, setScoredClueKeys] = useState([]);
+  const [unfinishedGames, setUnfinishedGames] = useState([]);
+  const [currentSaveId, setCurrentSaveId] = useState(null);
+  const [startExiting, setStartExiting] = useState(false);
+  const scoreBoardRef = useRef(null);
+
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "system"
   );
+
+  const [fadeOut, setFadeOut] = useState(false);
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const { width, height } = useWindowSize();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -48,16 +120,11 @@ export default function App() {
       root.classList.add("dark");
       root.style.colorScheme = "dark";
     } else {
-      const prefersDark = window.matchMedia(
+      const systemPrefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)"
       ).matches;
-      if (prefersDark) {
-        root.classList.add("dark");
-        root.style.colorScheme = "dark";
-      } else {
-        root.classList.remove("dark");
-        root.style.colorScheme = "light";
-      }
+      root.classList.toggle("dark", systemPrefersDark);
+      root.style.colorScheme = systemPrefersDark ? "dark" : "light";
     }
     localStorage.setItem("theme", theme);
   }, [theme]);
@@ -68,43 +135,17 @@ export default function App() {
     else setTheme("light");
   };
 
-  // === SPLASH SCREEN FADE ===
-  const [fadeOut, setFadeOut] = useState(false);
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)")
-    .matches;
-  const { width, height } = useWindowSize();
+  useEffect(() => {
+    if (score <= highScore) return;
+    setHighScore(score);
+    localStorage.setItem("crossword-high-score", String(score));
+  }, [score, highScore]);
 
-  // Try to restore saved puzzle on splash
   useEffect(() => {
     if (phase !== "splash") return;
 
-    const saved = localStorage.getItem("crossword-progress");
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
+    setUnfinishedGames(readUnfinishedGames());
 
-        if (data.grid && data.numbers && data.placements && data.clues) {
-          setPuzzle({
-            grid: data.grid,
-            numbers: data.numbers,
-            placements: data.placements,
-            clues: data.clues,
-            topic: data.topic ?? "",
-          });
-
-          setAnswers(Array.isArray(data.answers) ? data.answers : []);
-          setActiveClue(data.activeClue ?? null);
-          setDirection(data.direction ?? "across");
-          setTopic(data.topic ?? "");
-          setPhase("game");
-          return; // ⬅️ skip splash timers
-        }
-      } catch (err) {
-        console.error("Failed to load saved crossword:", err);
-      }
-    }
-
-    // No saved progress → normal splash behavior
     const fadeTimer = setTimeout(() => setFadeOut(true), 2000);
     const hideTimer = setTimeout(() => setPhase("start"), 2800);
 
@@ -114,27 +155,45 @@ export default function App() {
     };
   }, [phase]);
 
-  // === SAVE PROGRESS TO LOCALSTORAGE ===
   useEffect(() => {
-    if (!puzzle) return;
-    localStorage.setItem(
-      "crossword-progress",
-      JSON.stringify({
-        topic: puzzle.topic ?? topic,
-        grid: puzzle.grid,
-        numbers: puzzle.numbers,
-        placements: puzzle.placements,
-        clues: puzzle.clues,
-        answers,
-        activeClue,
-        direction,
-      })
-    );
-  }, [puzzle, answers, activeClue, direction, topic]);
+    if (!puzzle || !currentSaveId) return;
+    const snapshot = {
+      saveId: currentSaveId,
+      updatedAt: Date.now(),
+      topic: puzzle.topic ?? topic,
+      grid: puzzle.grid,
+      numbers: puzzle.numbers,
+      placements: puzzle.placements,
+      clues: puzzle.clues,
+      answers,
+      activeClue,
+      direction,
+      score,
+      scoredClueKeys,
+    };
+
+    setUnfinishedGames((prev) => {
+      const next = prev.filter((entry) => entry.saveId !== currentSaveId);
+      next.push(snapshot);
+      const sorted = next.sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0));
+      writeUnfinishedGames(sorted);
+      localStorage.setItem("crossword-progress", JSON.stringify(snapshot));
+      return sorted;
+    });
+  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, currentSaveId]);
 
   useEffect(() => setShowClueAnswer(false), [activeClue]);
 
-  // Auto-focus when showing clue answer
+  useEffect(() => {
+    if (!puzzleComplete || !currentSaveId) return;
+    setUnfinishedGames((prev) => {
+      const next = prev.filter((entry) => entry.saveId !== currentSaveId);
+      writeUnfinishedGames(next);
+      return next;
+    });
+    localStorage.removeItem("crossword-progress");
+  }, [puzzleComplete, currentSaveId]);
+
   useEffect(() => {
     if (!showClueAnswer) return;
     if (phase !== "game" || !puzzle || !activeClue) return;
@@ -159,20 +218,103 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [showClueAnswer, phase, puzzle, activeClue, answers]);
 
-  // === GENERATE CROSSWORD ===
-  const handleGenerate = async (chosenTopic, chosenCount) => {
+  useEffect(() => {
+    const updateScoreBurstPath = () => {
+      const scoreEl = scoreBoardRef.current;
+      if (!scoreEl) return;
+
+      const rect = scoreEl.getBoundingClientRect();
+      const startX = window.innerWidth * 0.5;
+      const startY = window.innerHeight * 0.58;
+      const targetX = rect.left + rect.width / 2;
+      const targetY = rect.top + rect.height / 2;
+
+      const dx = targetX - startX;
+      const dy = targetY - startY;
+
+      setScoreBurstPath({
+        dx70: `${dx * 0.92}px`,
+        dy70: `${dy * 0.92}px`,
+        dx100: `${dx}px`,
+        dy100: `${dy}px`,
+      });
+    };
+
+    updateScoreBurstPath();
+    window.addEventListener("resize", updateScoreBurstPath);
+    return () => window.removeEventListener("resize", updateScoreBurstPath);
+  }, [phase]);
+
+  const spawnScoreBurst = (delta) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setScoreBursts((prev) => [...prev, { id, delta }]);
+    setTimeout(() => {
+      setScoreBursts((prev) => prev.filter((entry) => entry.id !== id));
+    }, 1200);
+  };
+
+  const restoreGame = (data) => {
+    if (!isValidSavedGame(data)) return;
+
+    setPuzzle({
+      grid: data.grid,
+      numbers: data.numbers,
+      placements: data.placements,
+      clues: data.clues,
+      topic: data.topic ?? "",
+    });
+    setAnswers(Array.isArray(data.answers) ? data.answers : []);
+    setActiveClue(data.activeClue ?? null);
+    setDirection(data.direction ?? "across");
+    setTopic(data.topic ?? "");
+    setScore(Number(data.score || 0));
+    setScoredClueKeys(Array.isArray(data.scoredClueKeys) ? data.scoredClueKeys : []);
+    setPuzzleComplete(false);
+    setShowSolution(false);
+    setShowClueAnswer(false);
+    setFlashClue(null);
+    setCurrentSaveId(data.saveId || `${Date.now()}-${Math.random()}`);
+    setPhase("game");
+  };
+
+  const handleContinueGame = (saveId) => {
+    const selected = unfinishedGames.find((entry) => entry.saveId === saveId);
+    if (!selected) return;
+    restoreGame(selected);
+  };
+
+  const handleNewGame = () => {
+    localStorage.removeItem("crossword-progress");
+    setPuzzle(null);
+    setAnswers([]);
+    setActiveClue(null);
+    setCurrentSaveId(null);
+    setScore(0);
+    setScoredClueKeys([]);
+    setFlashClue(null);
+    setPuzzleComplete(false);
+    setShowSolution(false);
+    setShowClueAnswer(false);
+    setStartExiting(false);
+  };
+
+  const handleGenerate = async (chosenTopic) => {
+    handleNewGame();
+    const saveId = `${Date.now()}-${Math.random()}`;
+
     setTopic(chosenTopic);
-    setCount(chosenCount);
     setError("");
     setLoading(true);
+    const autoWordCount = getAutoWordCount();
 
     try {
       const wordsAndClues = await getWordsAndClues(
         chosenTopic.trim(),
-        chosenCount
+        autoWordCount
       );
-      if (!wordsAndClues?.words?.length)
+      if (!wordsAndClues?.words?.length) {
         throw new Error("Couldn't get words for that topic.");
+      }
 
       const result = buildCrossword(wordsAndClues.words);
       if (!result?.grid) throw new Error("Failed to place enough words.");
@@ -187,6 +329,7 @@ export default function App() {
         clues,
         topic: chosenTopic.trim(),
       });
+      setCurrentSaveId(saveId);
 
       setAnswers(
         Array.from({ length: result.grid.length }, () =>
@@ -200,15 +343,68 @@ export default function App() {
         setDirection(firstClue.dir);
       }
 
+      setStartExiting(true);
+      await new Promise((resolve) => setTimeout(resolve, 350));
       setPhase("game");
     } catch (e) {
       setError(e.message);
+      setStartExiting(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // === SPLASH SCREEN ===
+  const handleWordCompleteScore = (clue) => {
+    const key = clueKey(clue);
+    if (!key || scoredClueKeys.includes(key)) return;
+
+    const gained = Math.max(3, clue.word?.length || 0);
+    setScoredClueKeys((prev) => [...prev, key]);
+    setScore((prev) => prev + gained);
+    spawnScoreBurst(gained);
+
+    setFlashClue(clue);
+    setTimeout(() => setFlashClue(null), 550);
+  };
+
+  const handleWordMisspelledScore = () => {
+    setScore((prev) => prev - 1);
+    spawnScoreBurst(-1);
+  };
+
+  const handleQuitGame = () => {
+    const snapshot = puzzle
+      ? {
+          saveId: currentSaveId || `${Date.now()}-${Math.random()}`,
+          updatedAt: Date.now(),
+          topic: puzzle.topic ?? topic,
+          grid: puzzle.grid,
+          numbers: puzzle.numbers,
+          placements: puzzle.placements,
+          clues: puzzle.clues,
+          answers,
+          activeClue,
+          direction,
+          score,
+          scoredClueKeys,
+        }
+      : null;
+
+    if (snapshot) {
+      localStorage.setItem("crossword-progress", JSON.stringify(snapshot));
+      setUnfinishedGames((prev) => {
+        const next = prev.filter((entry) => entry.saveId !== snapshot.saveId);
+        next.push(snapshot);
+        const sorted = next.sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0));
+        writeUnfinishedGames(sorted);
+        return sorted;
+      });
+    }
+
+    setStartExiting(false);
+    setPhase("start");
+  };
+
   if (phase === "splash") {
     return (
       <div
@@ -237,38 +433,39 @@ export default function App() {
     );
   }
 
-  // === WORDSTORM START SCREEN ===
   if (phase === "start") {
-    return <WordStormStart onStart={handleGenerate} loading={loading} />;
+    return (
+      <WordStormStart
+        onStart={handleGenerate}
+        loading={loading}
+        startExiting={startExiting}
+        highScore={highScore}
+        unfinishedGames={unfinishedGames}
+        onContinue={handleContinueGame}
+        onNewGame={handleNewGame}
+      />
+    );
   }
 
-  // === CROSSWORD GAME PHASE ===
   if (phase === "game" && puzzle) {
-    const goToNextClue = (activeClue, clues, answers) => {
-      const isAcross = activeClue.dir === "across";
-      const currentList = isAcross ? clues.across : clues.down;
-      const currentIndex = currentList.findIndex(
-        (c) => c.num === activeClue.num
+    const allClues = [...puzzle.clues.across, ...puzzle.clues.down];
+    const goToNextClue = (currentClue, currentAnswers) => {
+      if (!currentClue || !allClues.length) return null;
+
+      const startIndex = allClues.findIndex(
+        (c) => c.num === currentClue.num && c.dir === currentClue.dir
       );
+      if (startIndex === -1) return null;
 
-      for (let i = currentIndex + 1; i < currentList.length; i++) {
-        const next = currentList[i];
-        if (!isWordCorrect(next, answers)) return next;
-      }
-
-      const otherList = isAcross ? clues.down : clues.across;
-      for (let i = 0; i < otherList.length; i++) {
-        const next = otherList[i];
-        if (!isWordCorrect(next, answers)) return next;
+      for (let i = 1; i <= allClues.length; i++) {
+        const idx = (startIndex + i) % allClues.length;
+        const candidate = allClues[idx];
+        if (!isWordCorrect(candidate, currentAnswers)) return candidate;
       }
 
       return null;
     };
-
-    const allClues = [...puzzle.clues.across, ...puzzle.clues.down];
-
     const isClueSolved = (clue) => isWordCorrect(clue, answers);
-
     const currentIndex = allClues.findIndex(
       (c) => c.num === activeClue?.num && c.dir === activeClue?.dir
     );
@@ -277,9 +474,7 @@ export default function App() {
       if (!allClues.length) return;
 
       if (currentIndex === -1) {
-        const lastUnsolved = [...allClues]
-          .reverse()
-          .find((c) => !isClueSolved(c));
+        const lastUnsolved = [...allClues].reverse().find((c) => !isClueSolved(c));
         if (lastUnsolved) {
           setActiveClue(lastUnsolved);
           setDirection(lastUnsolved.dir);
@@ -323,156 +518,139 @@ export default function App() {
       }
     };
 
+    const scheduleRefocus = () => {
+      setTimeout(() => refocusGrid(), 0);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => refocusGrid());
+      });
+    };
+
     return (
       <div className="app">
-        <h1>Crossword Generate+</h1>
-
-        {/* 🌙 / 🌞 Theme Toggle */}
         <div className="theme-toggle">
           <button onClick={toggleTheme} className="theme-btn">
             {theme === "dark"
-              ? "🌙 Dark"
+              ? "Dark"
               : theme === "light"
-              ? "🌞 Light"
-              : "🖥 System"}
+              ? "Light"
+              : "System"}
           </button>
         </div>
 
-        <p className="tag">
-          Topic: <strong>{puzzle.topic}</strong>
-        </p>
-
-        {error && <div className="error">{error}</div>}
-
-        <div className="action-buttons">
-          <button
-            className="btn-small"
-            onClick={() => {
-              setShowSolution(!showSolution);
-              setTimeout(() => refocusGrid(), 0);
-            }}
-          >
-            {showSolution ? "Hide Solution" : "Show Solution"}
-          </button>
-
-          <button
-            className="btn-small"
-            disabled={!activeClue}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setShowClueAnswer(true);
-            }}
-            onMouseUp={() => {
-              setShowClueAnswer(false);
-              refocusGrid();
-            }}
-            onMouseLeave={() => {
-              setShowClueAnswer(false);
-              refocusGrid();
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              setShowClueAnswer(true);
-            }}
-            onTouchEnd={() => {
-              setShowClueAnswer(false);
-              refocusGrid();
-            }}
-          >
-            Show Clue Answer
-          </button>
-
-          <button
-            className="btn-small"
-            onClick={() => {
-              window.print();
-              setTimeout(() => refocusGrid(), 0);
-            }}
-          >
-            Print Puzzle
-          </button>
+        <div className="score-board" ref={scoreBoardRef}>Score: {score}</div>
+        <div
+          className="score-burst-layer"
+          style={{
+            "--score-dx-70": scoreBurstPath.dx70,
+            "--score-dy-70": scoreBurstPath.dy70,
+            "--score-dx-100": scoreBurstPath.dx100,
+            "--score-dy-100": scoreBurstPath.dy100,
+          }}
+        >
+          {scoreBursts.map((burst) => (
+            <div
+              key={burst.id}
+              className={`score-burst ${burst.delta > 0 ? "plus" : "minus"}`}
+            >
+              {burst.delta > 0 ? `+${burst.delta}` : burst.delta}
+            </div>
+          ))}
         </div>
 
-        {/* GRID + CLUES SIDE BY SIDE */}
         <div className="grid-and-clues">
-          <CrosswordGrid
-            grid={puzzle.grid}
-            numbers={puzzle.numbers}
-            placements={puzzle.placements}
-            answers={answers}
-            setAnswers={setAnswers}
-            setPuzzleComplete={setPuzzleComplete}
-            direction={direction}
-            setDirection={setDirection}
-            activeClue={activeClue}
-            setActiveClue={setActiveClue}
-            clues={puzzle.clues}
-            showSolution={showSolution}
-            showClueAnswer={showClueAnswer}
-            onPrevClue={handlePrevClue}
-            onNextClue={handleNextClue}
-            onRefocusReady={setRefocusGrid}
-            onWordComplete={(clue) => {
-              const next = goToNextClue(clue, puzzle.clues, answers);
-              if (next) {
-                setActiveClue(next);
-                setDirection(next.dir);
-              }
-            }}
-          />
+          <div className="game-main">
+            <h1>Crossword Generate+</h1>
 
-          <div className="clues">
-            <h3>Across</h3>
-            <ul className="clue-list">
-              {puzzle.clues.across.map((c) => (
-                <li
-                  key={`across-${c.num}`}
-                  onClick={() => {
-                    setActiveClue(c);
-                    setDirection(c.dir);
-                  }}
-                  className={`
-                    ${
-                      activeClue?.num === c.num &&
-                      activeClue?.dir === "across"
-                        ? "active-clue"
-                        : ""
-                    }
-                    ${isWordCorrect(c, answers) ? "solved" : ""}
-                  `}
-                  style={{ cursor: "pointer" }}
-                >
-                  <span className="clue-num">{c.num}</span>
-                  <span className="clue-text">{c.clue}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="tag">
+              Topic: <strong>{puzzle.topic}</strong>
+            </p>
 
-            <h3>Down</h3>
-            <ul className="clue-list">
-              {puzzle.clues.down.map((c) => (
-                <li
-                  key={`down-${c.num}`}
-                  onClick={() => {
-                    setActiveClue(c);
-                    setDirection(c.dir);
-                  }}
-                  className={`
-                    ${
-                      activeClue?.num === c.num &&
-                      activeClue?.dir === "down"
-                        ? "active-clue"
-                        : ""
-                    }
-                    ${isWordCorrect(c, answers) ? "solved" : ""}
-                  `}
-                  style={{ cursor: "pointer" }}
-                >
-                  <span className="clue-num">{c.num}</span>
-                  <span className="clue-text">{c.clue}</span>
-                </li>
-              ))}
-            </ul>
+            {error && <div className="error">{error}</div>}
+
+            <div className="action-buttons">
+              <button
+                className="btn-small"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => {
+                  setShowSolution(!showSolution);
+                  scheduleRefocus();
+                }}
+              >
+                {showSolution ? "Hide Solution" : "Show Solution"}
+              </button>
+
+              <button
+                className="btn-small"
+                disabled={!activeClue}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setShowClueAnswer(true);
+                }}
+                onMouseUp={() => {
+                  setShowClueAnswer(false);
+                  scheduleRefocus();
+                }}
+                onMouseLeave={() => {
+                  setShowClueAnswer(false);
+                  scheduleRefocus();
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  setShowClueAnswer(true);
+                }}
+                onTouchEnd={() => {
+                  setShowClueAnswer(false);
+                  scheduleRefocus();
+                }}
+                onTouchCancel={() => {
+                  setShowClueAnswer(false);
+                  scheduleRefocus();
+                }}
+              >
+                Show Clue Answer
+              </button>
+
+              <button
+                className="btn-small"
+                onClick={() => {
+                  window.print();
+                  setTimeout(() => refocusGrid(), 0);
+                }}
+              >
+                Print Puzzle
+              </button>
+
+              <button className="btn-small quit-btn" onClick={handleQuitGame}>
+                Quit Game
+              </button>
+            </div>
+
+            <CrosswordGrid
+              grid={puzzle.grid}
+              numbers={puzzle.numbers}
+              placements={puzzle.placements}
+              answers={answers}
+              setAnswers={setAnswers}
+              setPuzzleComplete={setPuzzleComplete}
+              direction={direction}
+              activeClue={activeClue}
+              showSolution={showSolution}
+              showClueAnswer={showClueAnswer}
+              flashClue={flashClue}
+              onPrevClue={handlePrevClue}
+              onNextClue={handleNextClue}
+              onWordMisspelled={handleWordMisspelledScore}
+              onRefocusReady={setRefocusGrid}
+              onWordComplete={(clue) => {
+                handleWordCompleteScore(clue);
+                const next = goToNextClue(clue, answers);
+                if (next) {
+                  setActiveClue(next);
+                  setDirection(next.dir);
+                }
+              }}
+            />
           </div>
         </div>
 
@@ -480,17 +658,28 @@ export default function App() {
           <>
             <Confetti width={width} height={height} />
             <div className="end-screen">
-              <h2>🎉 Congratulations! You Solved it!</h2>
+              <h2>Congratulations! You solved it!</h2>
               <div className="end-buttons">
                 <button
                   className="btn"
                   onClick={() => {
                     localStorage.removeItem("crossword-progress");
+                    if (currentSaveId) {
+                      setUnfinishedGames((prev) => {
+                        const next = prev.filter((entry) => entry.saveId !== currentSaveId);
+                        writeUnfinishedGames(next);
+                        return next;
+                      });
+                    }
                     setPuzzle(null);
                     setAnswers([]);
                     setPuzzleComplete(false);
                     setActiveClue(null);
+                    setCurrentSaveId(null);
                     setShowSolution(false);
+                    setScore(0);
+                    setScoredClueKeys([]);
+                    setStartExiting(false);
                     setPhase("start");
                   }}
                 >
@@ -500,13 +689,23 @@ export default function App() {
                   className="btn"
                   onClick={() => {
                     localStorage.removeItem("crossword-progress");
+                    if (currentSaveId) {
+                      setUnfinishedGames((prev) => {
+                        const next = prev.filter((entry) => entry.saveId !== currentSaveId);
+                        writeUnfinishedGames(next);
+                        return next;
+                      });
+                    }
                     setPuzzle(null);
                     setAnswers([]);
                     setPuzzleComplete(false);
                     setActiveClue(null);
+                    setCurrentSaveId(null);
                     setShowSolution(false);
                     setTopic("");
-                    setCount(10);
+                    setScore(0);
+                    setScoredClueKeys([]);
+                    setStartExiting(false);
                     setPhase("start");
                   }}
                 >
