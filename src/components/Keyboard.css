@@ -42,6 +42,9 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: all 0.15s ease, background 0.15s ease;
+  position: relative;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .key:hover {
@@ -50,7 +53,43 @@
 }
 
 .key:active {
+  transform: none;
+}
+
+.key.pressed {
   transform: scale(0.95);
+}
+
+.key-preview {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  min-width: 28px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #dbeafe);
+  color: #1e3a8a;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 32px;
+  text-align: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  z-index: 8;
+  animation: key-preview-pop 140ms ease-out;
+}
+
+@keyframes key-preview-pop {
+  from {
+    transform: translateX(-50%) translateY(3px) scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 /* Special keys like BACKSPACE, CLEAR */
