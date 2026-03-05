@@ -483,10 +483,12 @@
   align-items: center;
   justify-content: center;
   font-size: 1rem;
+  line-height: 1;
   font-weight: bold;
   color: #1e3a8a;
   pointer-events: none;
   z-index: 2;
+  text-align: center;
 }
   .cell-input:focus {
     outline: none;
@@ -724,16 +726,28 @@
   }
 
   /* Make grid responsive on small screens */
+@media (max-width: 900px) {
+  .grid .cell-input {
+    font-size: 0;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .grid .cell-letter {
+    font-size: 0.78rem;
+    line-height: 1;
+  }
+}
+
 @media (max-width: 480px) {
   .cell {
-    width: min(2rem, 5vw);
-    height: min(2rem, 5vw);
-    line-height: min(2rem, 5vw);
-    transform: scale(1.25);
+    width: min(1.85rem, 4.9vw);
+    height: min(1.85rem, 4.9vw);
+    line-height: min(1.85rem, 4.9vw);
   }
-    .cell-input {
-      font-size: 0.9rem;
-    }
+
+  .grid .cell-letter {
+    font-size: 0.72rem;
+  }
   }
 
   /* ===========================================
