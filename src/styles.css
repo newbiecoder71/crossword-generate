@@ -414,13 +414,14 @@
   position: relative;
   width: 1.8rem;
   height: 1.8rem;
+  line-height: 1.8rem;
   border: 1px solid #3b82f6;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #dbeafe;
   box-shadow: inset 0 0 2px rgba(0,0,0,0.18);
-  overflow: hidden;
+  overflow: visible;
 }
 .cell.block { background: #111; }
 
@@ -437,22 +438,22 @@
   color: #1e3a8a;
 }
 .cell-input {
-  position: absolute;
-  inset: 0;
+  position: relative;
   width: 100%;
   height: 100%;
   border: none;
   margin: 0;
   padding: 0 !important;
   display: block;
-  text-align: center;
+  text-align: center !important;
   text-indent: 0;
-  line-height: 1.8rem;
+  line-height: inherit;
   font-size: 1rem;
   font-weight: bold;
   background: transparent;
   color: #1e3a8a;
   text-transform: capitalize;
+  vertical-align: middle;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -472,7 +473,9 @@
 
 .cell.active-cell {
   z-index: 2;
-  box-shadow: inset 0 0 0 2px #1d4ed8, 0 0 10px rgba(59, 130, 246, 0.7);
+  outline: 3px solid #1d4ed8;
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 1px #60a5fa, 0 0 12px rgba(59, 130, 246, 0.8);
 }
 
   /* Completed word effect (3D-ish) */
@@ -685,12 +688,13 @@
   }
 
   /* Make grid responsive on small screens */
-  @media (max-width: 480px) {
-    .cell {
-      width: min(2rem, 5vw);
-      height: min(2rem, 5vw);
-      transform: scale(1.25);
-    }
+@media (max-width: 480px) {
+  .cell {
+    width: min(2rem, 5vw);
+    height: min(2rem, 5vw);
+    line-height: min(2rem, 5vw);
+    transform: scale(1.25);
+  }
     .cell-input {
       font-size: 0.9rem;
     }
