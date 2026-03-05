@@ -119,6 +119,10 @@ export default function App() {
   const { width, height } = useWindowSize();
 
   useEffect(() => {
+    document.documentElement.classList.remove("boot-dark");
+  }, []);
+
+  useEffect(() => {
     const root = document.documentElement;
     if (theme === "light") {
       root.classList.remove("dark");
