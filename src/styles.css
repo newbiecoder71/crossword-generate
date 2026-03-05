@@ -149,19 +149,23 @@
 }
 
 .score-board {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 120;
-  min-width: 140px;
+  position: relative;
+  min-width: 108px;
   text-align: center;
-  padding: 0.6rem 0.9rem;
+  padding: 0.45rem 0.65rem;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: linear-gradient(145deg, #1f2937, #111827);
   color: #fff;
   font-weight: 800;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.score-inline-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.45rem;
 }
 
 .score-burst-layer {

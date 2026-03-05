@@ -537,7 +537,6 @@ export default function App() {
           </button>
         </div>
 
-        <div className="score-board" ref={scoreBoardRef}>Score: {score}</div>
         <div
           className="score-burst-layer"
           style={{
@@ -560,6 +559,11 @@ export default function App() {
         <div className="grid-and-clues">
           <div className="game-main">
             <h1>Crossword Generate+</h1>
+            <div className="score-inline-row">
+              <div className="score-board" ref={scoreBoardRef}>
+                Score: {score}
+              </div>
+            </div>
 
             <p className="tag">
               Topic: <strong>{puzzle.topic}</strong>
