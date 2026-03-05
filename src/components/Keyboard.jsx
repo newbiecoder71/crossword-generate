@@ -3,7 +3,7 @@ import "./Keyboard.css";
 
 export default function Keyboard({ onKeyPress }) {
   const [pressedKey, setPressedKey] = useState(null);
-  const [previewKey, setPreviewKey] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   const rows = [
     "QWERTYUIOP".split(""),
@@ -15,14 +15,25 @@ export default function Keyboard({ onKeyPress }) {
 
   const handlePressStart = (key) => {
     setPressedKey(key);
+
     if (isLetterKey(key)) {
-      setPreviewKey(key);
+      const id = `${Date.now()}-${Math.random()}`;
+      setPreview({ key, id });
+      setTimeout(() => {
+        setPreview((prev) => (prev?.id === id ? null : prev));
+      }, 180);
     }
+
+    onKeyPress(key);
+
+    // Safety release in case pointerup is missed on some mobile browsers.
+    setTimeout(() => {
+      setPressedKey((prev) => (prev === key ? null : prev));
+    }, 120);
   };
 
   const handlePressEnd = () => {
     setPressedKey(null);
-    setTimeout(() => setPreviewKey(null), 120);
   };
 
   const pointerDown = (key) => (e) => {
@@ -42,14 +53,14 @@ export default function Keyboard({ onKeyPress }) {
               onPointerUp={handlePressEnd}
               onPointerCancel={handlePressEnd}
               onPointerLeave={handlePressEnd}
-              onClick={() => onKeyPress(ch)}
             >
               {ch}
-              {previewKey === ch && <span className="key-preview">{ch}</span>}
+              {preview?.key === ch && <span className="key-preview">{ch}</span>}
             </button>
           ))}
         </div>
       ))}
+
       <div className="keyboard-row">
         <button
           className={`key special ${pressedKey === "BACKSPACE" ? "pressed" : ""}`}
@@ -57,17 +68,16 @@ export default function Keyboard({ onKeyPress }) {
           onPointerUp={handlePressEnd}
           onPointerCancel={handlePressEnd}
           onPointerLeave={handlePressEnd}
-          onClick={() => onKeyPress("BACKSPACE")}
         >
           ?
         </button>
+
         <button
           className={`key special ${pressedKey === "CLEAR" ? "pressed" : ""}`}
           onPointerDown={pointerDown("CLEAR")}
           onPointerUp={handlePressEnd}
           onPointerCancel={handlePressEnd}
           onPointerLeave={handlePressEnd}
-          onClick={() => onKeyPress("CLEAR")}
         >
           Clear
         </button>
