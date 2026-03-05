@@ -26,6 +26,9 @@ export default function CrosswordGrid({
   const lastClueKeyRef = useRef(null);                       // remember last handled answer span
   const suppressFocusRef = useRef(false);                    // avoid refocus while typing/backspacing
   const [refsReady, setRefsReady] = useState(false);
+  const gridFrameRef = useRef(null);
+  const gridLayerRef = useRef(null);
+  const [gridZoomStyle, setGridZoomStyle] = useState({});
 
   // ---- Build refs when grid changes ----
   useEffect(() => {
@@ -259,6 +262,64 @@ export default function CrosswordGrid({
     // fully filled: do nothing
   }, [clueKey, refsReady]); // <— depend on the stable key only
 
+  useEffect(() => {
+    const updateZoom = () => {
+      const frame = gridFrameRef.current;
+      const layer = gridLayerRef.current;
+      if (!frame || !layer || !activeClue) {
+        setGridZoomStyle({});
+        return;
+      }
+
+      const isSmallScreen = window.innerWidth <= 900;
+      if (!isSmallScreen) {
+        setGridZoomStyle({});
+        return;
+      }
+
+      const probeCell = layer.querySelector(".cell:not(.block)");
+      if (!probeCell) {
+        setGridZoomStyle({});
+        return;
+      }
+
+      const frameRect = frame.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
+      const cellRect = probeCell.getBoundingClientRect();
+      const cellSize = cellRect.width;
+      if (!cellSize) {
+        setGridZoomStyle({});
+        return;
+      }
+
+      const { row, col, dir, word } = activeClue;
+      const len = Math.max(1, word?.length || 1);
+
+      const centerRow = dir === "down" ? row + (len - 1) / 2 : row;
+      const centerCol = dir === "across" ? col + (len - 1) / 2 : col;
+
+      const zoom = 1.65;
+      const focusX = (centerCol + 0.5) * cellSize;
+      const focusY = (centerRow + 0.5) * cellSize;
+
+      let tx = frameRect.width / 2 - focusX * zoom;
+      let ty = frameRect.height / 2 - focusY * zoom;
+
+      const minTx = frameRect.width - layerRect.width * zoom;
+      const minTy = frameRect.height - layerRect.height * zoom;
+      tx = Math.min(0, Math.max(minTx, tx));
+      ty = Math.min(0, Math.max(minTy, ty));
+
+      setGridZoomStyle({
+        transform: `translate(${tx}px, ${ty}px) scale(${zoom})`,
+      });
+    };
+
+    updateZoom();
+    window.addEventListener("resize", updateZoom);
+    return () => window.removeEventListener("resize", updateZoom);
+  }, [activeClue, grid, answers, refsReady]);
+
   // ---- Input handlers ----
   const handleInput = (r, c, val) => {
     // overwrite with the newest letter
@@ -435,10 +496,11 @@ export default function CrosswordGrid({
   return (
     <div className="crossword-wrapper">
       {/* GRID */}
-      <div className="grid">
-        {grid.map((row, r) => (
-          <div className="grid-row" key={r}>
-            {row.map((ch, c) => {
+      <div className="grid" ref={gridFrameRef}>
+        <div className="grid-zoom-layer" ref={gridLayerRef} style={gridZoomStyle}>
+          {grid.map((row, r) => (
+            <div className="grid-row" key={r}>
+              {row.map((ch, c) => {
               const num = numbers?.[r]?.[c];
               const val = answers?.[r]?.[c] || "";
               const isActive = activeCell === `${r}-${c}`;
@@ -477,46 +539,47 @@ export default function CrosswordGrid({
                   ? solutionLetter(r, c, placements)
                   : val;
 
-              return (
-                <div
-                  className={`cell ${ch === "#" ? "block" : ""} ${
-                    isActive ? "active-cell" : ""
-                  } ${isInActiveClue ? "active-clue-cell" : ""} ${
-                    isInCorrectWord ? "correct-word" : ""
-                  } ${isInFlashWord ? "flash-word-cell" : ""}`}
-                  key={`${r}-${c}`}
-                >
-                  {num && <span className="cell-num">{num}</span>}
-                  {ch !== "#" && (
-                    <input
-                      data-coord={`${r}-${c}`}
-                      ref={inputRefs.current?.[r]?.[c] || null}
-                      type="text"
-                      maxLength="1"
-                      className="cell-input"
-                      value={displayChar}
-                      readOnly={window.innerWidth < 900}
-                      inputMode={window.innerWidth < 900 ? "none" : "text"}
-                    
-                      onFocus={() => setActiveCell(`${r}-${c}`)}
-                      onClick={() => handleCellClick(r, c)}
-                    
-                      // You don't actually need onChange now, since input comes from
-                      // your virtual keyboard + handleInput, but leaving it won't break anything.
-                      // onChange={(e) => handleInput(r, c, e.target.value)}
-                    
-                      onKeyDown={(e) => handleKeyDown(e, r, c)}  // desktop keyboard still works
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="characters"
-                    />
-                  )}
-                  {ch !== "#" && <span className="cell-letter">{displayChar}</span>}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                return (
+                  <div
+                    className={`cell ${ch === "#" ? "block" : ""} ${
+                      isActive ? "active-cell" : ""
+                    } ${isInActiveClue ? "active-clue-cell" : ""} ${
+                      isInCorrectWord ? "correct-word" : ""
+                    } ${isInFlashWord ? "flash-word-cell" : ""}`}
+                    key={`${r}-${c}`}
+                  >
+                    {num && <span className="cell-num">{num}</span>}
+                    {ch !== "#" && (
+                      <input
+                        data-coord={`${r}-${c}`}
+                        ref={inputRefs.current?.[r]?.[c] || null}
+                        type="text"
+                        maxLength="1"
+                        className="cell-input"
+                        value={displayChar}
+                        readOnly={window.innerWidth < 900}
+                        inputMode={window.innerWidth < 900 ? "none" : "text"}
+                      
+                        onFocus={() => setActiveCell(`${r}-${c}`)}
+                        onClick={() => handleCellClick(r, c)}
+                      
+                        // You don't actually need onChange now, since input comes from
+                        // your virtual keyboard + handleInput, but leaving it won't break anything.
+                        // onChange={(e) => handleInput(r, c, e.target.value)}
+                      
+                        onKeyDown={(e) => handleKeyDown(e, r, c)}  // desktop keyboard still works
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="characters"
+                      />
+                    )}
+                    {ch !== "#" && <span className="cell-letter">{displayChar}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* CLUE BAR */}

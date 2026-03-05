@@ -402,17 +402,25 @@
   /* ===========================================
      CROSSWORD GRID
      =========================================== */
-  .grid {
-    display: inline-block;
-    width: fit-content;
-    height: fit-content;
-    background: var(--grid-bg);
-    padding: 8px;
-    border-radius: 12px;
-    border: 2px solid var(--accent);
-    box-shadow: 0 0 0 1px var(--border) inset;
-  }
-  .grid-row { display: flex; width: fit-content; }
+.grid {
+  display: inline-block;
+  width: fit-content;
+  height: fit-content;
+  background: var(--grid-bg);
+  padding: 8px;
+  border-radius: 12px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 1px var(--border) inset;
+  position: relative;
+  overflow: hidden;
+}
+.grid-zoom-layer {
+  width: fit-content;
+  transform-origin: 0 0;
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+.grid-row { display: flex; width: fit-content; }
   
 .cell {
   position: relative;
