@@ -275,16 +275,19 @@ export default function CrosswordGrid({
       localStorage.removeItem("crossword-progress");
     }
 
-    // score only when a clue transitions from "not full" to "full"
+    // Handle clue completion/misspelling transitions.
     if (activeClue) {
+      const wasCorrect = isWordCorrect(activeClue, answers);
+      const nowCorrect = isWordCorrect(activeClue, next);
       const wasFilled = isClueFilled(activeClue, answers);
       const nowFilled = isClueFilled(activeClue, next);
-      if (!wasFilled && nowFilled) {
-        if (isWordCorrect(activeClue, next)) {
-          setTimeout(() => onWordComplete?.(activeClue), 150);
-        } else {
-          onWordMisspelled?.(activeClue);
-        }
+
+      // If user fixes a previously incorrect clue, award and advance.
+      if (!wasCorrect && nowCorrect) {
+        setTimeout(() => onWordComplete?.(activeClue), 150);
+      } else if (!wasFilled && nowFilled && !nowCorrect) {
+        // Only penalize when clue first becomes fully filled and still wrong.
+        onWordMisspelled?.(activeClue);
       }
     }
 

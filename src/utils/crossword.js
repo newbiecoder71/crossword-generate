@@ -211,14 +211,17 @@ export function buildClueLists(numbered, clueMap) {
           grid[r][c + 1] !== "#"
         ) {
           const word = collectWord(grid, r, c, "across");
+          const clue =
+            clueMap[word.toLowerCase()] ||
+            clueMap[word.toUpperCase()] ||
+            clueMap[word];
+          if (!clue) {
+            throw new Error(`Missing clue for ${word} (across).`);
+          }
           across.push({
             num,
             word,
-            clue:
-                clueMap[word.toLowerCase()] || 
-                clueMap[word.toUpperCase()] || 
-                clueMap[word] || 
-                `(${word.length} letters)`,
+            clue,
             dir: "across",
             row: r,
             col: c,
@@ -232,14 +235,17 @@ export function buildClueLists(numbered, clueMap) {
           grid[r + 1][c] !== "#"
         ) {
           const word = collectWord(grid, r, c, "down");
+          const clue =
+            clueMap[word.toLowerCase()] ||
+            clueMap[word.toUpperCase()] ||
+            clueMap[word];
+          if (!clue) {
+            throw new Error(`Missing clue for ${word} (down).`);
+          }
           down.push({
             num,
             word,
-            clue: 
-                clueMap[word.toLowerCase()] || 
-                clueMap[word.toUpperCase()] || 
-                clueMap[word] || 
-                `(${word.length} letters)`,
+            clue,
             dir: "down",
             row: r,
             col: c,
