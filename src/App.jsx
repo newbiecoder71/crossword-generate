@@ -4,6 +4,7 @@ import {
   buildCrossword,
   numberClues,
   buildClueLists,
+  isPuzzleComplete,
   isWordCorrect,
 } from "./utils/crossword.js";
 import { getWordsAndClues } from "./utils/ai.js";
@@ -17,6 +18,8 @@ const clueKey = (clue) =>
 
 const isValidSavedGame = (data) =>
   !!(data?.grid && data?.numbers && data?.placements && data?.clues);
+const isCompletedGame = (data) =>
+  !!(data && isValidSavedGame(data) && isPuzzleComplete(data.placements, data.answers || []));
 const UNFINISHED_GAMES_KEY = "crossword-progress-list";
 
 const readUnfinishedGames = () => {
@@ -25,7 +28,9 @@ const readUnfinishedGames = () => {
   if (listRaw) {
     try {
       const parsed = JSON.parse(listRaw);
-      if (Array.isArray(parsed)) list = parsed.filter(isValidSavedGame);
+      if (Array.isArray(parsed)) {
+        list = parsed.filter((entry) => isValidSavedGame(entry) && !isCompletedGame(entry));
+      }
     } catch {
       list = [];
     }
@@ -38,6 +43,7 @@ const readUnfinishedGames = () => {
       const legacy = JSON.parse(legacyRaw);
       if (
         isValidSavedGame(legacy) &&
+        !isCompletedGame(legacy) &&
         !list.some((entry) => entry.saveId && entry.saveId === legacy.saveId)
       ) {
         list.push({
@@ -179,6 +185,7 @@ export default function App() {
       score,
       scoredClueKeys,
       freeClueUses,
+      puzzleComplete,
     };
 
     setUnfinishedGames((prev) => {
@@ -189,7 +196,7 @@ export default function App() {
       localStorage.setItem("crossword-progress", JSON.stringify(snapshot));
       return sorted;
     });
-  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, freeClueUses, currentSaveId]);
+  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, freeClueUses, puzzleComplete, currentSaveId]);
 
   useEffect(() => setShowClueAnswer(false), [activeClue]);
 
@@ -200,7 +207,6 @@ export default function App() {
       writeUnfinishedGames(next);
       return next;
     });
-    localStorage.removeItem("crossword-progress");
   }, [puzzleComplete, currentSaveId]);
 
   useEffect(() => {
@@ -270,6 +276,7 @@ export default function App() {
 
   const restoreGame = (data) => {
     if (!isValidSavedGame(data)) return;
+    const completed = Boolean(data.puzzleComplete) || isCompletedGame(data);
 
     setPuzzle({
       grid: data.grid,
@@ -284,7 +291,7 @@ export default function App() {
     setTopic(data.topic ?? "");
     setScore(Number(data.score || 0));
     setScoredClueKeys(Array.isArray(data.scoredClueKeys) ? data.scoredClueKeys : []);
-    setPuzzleComplete(false);
+    setPuzzleComplete(completed);
     setShowSolution(false);
     setShowClueAnswer(false);
     setFlashClue(null);
@@ -405,6 +412,7 @@ export default function App() {
           score,
           scoredClueKeys,
           freeClueUses,
+          puzzleComplete,
         }
       : null;
 
