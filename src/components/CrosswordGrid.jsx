@@ -549,7 +549,7 @@ export default function CrosswordGrid({
                     } ${isInFlashWord ? "flash-word-cell" : ""}`}
                     key={`${r}-${c}`}
                   >
-                    {num && <span className="cell-num">{num}</span>}
+                    {num && !isInCorrectWord && <span className="cell-num">{num}</span>}
                     {ch !== "#" && (
                       <input
                         data-coord={`${r}-${c}`}
