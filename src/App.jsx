@@ -98,9 +98,13 @@ export default function App() {
   });
   const [flashClue, setFlashClue] = useState(null);
   const [scoredClueKeys, setScoredClueKeys] = useState([]);
+  const [freeClueUses, setFreeClueUses] = useState(
+    () => Number(localStorage.getItem("crossword-free-clue-uses") || 0)
+  );
   const [unfinishedGames, setUnfinishedGames] = useState([]);
   const [currentSaveId, setCurrentSaveId] = useState(null);
   const [startExiting, setStartExiting] = useState(false);
+  const puzzleBonusAwardedRef = useRef(false);
   const scoreBoardRef = useRef(null);
 
   const [theme, setTheme] = useState(
@@ -142,6 +146,10 @@ export default function App() {
   }, [score, highScore]);
 
   useEffect(() => {
+    localStorage.setItem("crossword-free-clue-uses", String(freeClueUses));
+  }, [freeClueUses]);
+
+  useEffect(() => {
     if (phase !== "splash") return;
 
     setUnfinishedGames(readUnfinishedGames());
@@ -170,6 +178,7 @@ export default function App() {
       direction,
       score,
       scoredClueKeys,
+      freeClueUses,
     };
 
     setUnfinishedGames((prev) => {
@@ -180,7 +189,7 @@ export default function App() {
       localStorage.setItem("crossword-progress", JSON.stringify(snapshot));
       return sorted;
     });
-  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, currentSaveId]);
+  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, freeClueUses, currentSaveId]);
 
   useEffect(() => setShowClueAnswer(false), [activeClue]);
 
@@ -193,6 +202,12 @@ export default function App() {
     });
     localStorage.removeItem("crossword-progress");
   }, [puzzleComplete, currentSaveId]);
+
+  useEffect(() => {
+    if (!puzzleComplete || puzzleBonusAwardedRef.current) return;
+    setFreeClueUses((prev) => prev + 1);
+    puzzleBonusAwardedRef.current = true;
+  }, [puzzleComplete]);
 
   useEffect(() => {
     if (!showClueAnswer) return;
@@ -273,6 +288,7 @@ export default function App() {
     setShowSolution(false);
     setShowClueAnswer(false);
     setFlashClue(null);
+    puzzleBonusAwardedRef.current = false;
     setCurrentSaveId(data.saveId || `${Date.now()}-${Math.random()}`);
     setPhase("game");
   };
@@ -296,6 +312,7 @@ export default function App() {
     setShowSolution(false);
     setShowClueAnswer(false);
     setStartExiting(false);
+    puzzleBonusAwardedRef.current = false;
   };
 
   const handleGenerate = async (chosenTopic) => {
@@ -387,6 +404,7 @@ export default function App() {
           direction,
           score,
           scoredClueKeys,
+          freeClueUses,
         }
       : null;
 
@@ -525,6 +543,24 @@ export default function App() {
       });
     };
 
+    const handleClueAnswerPressStart = (e) => {
+      e.preventDefault();
+      if (!activeClue) return;
+
+      if (freeClueUses > 0) {
+        setFreeClueUses((prev) => Math.max(0, prev - 1));
+      } else {
+        setScore((prev) => prev - 1);
+        spawnScoreBurst(-1);
+      }
+      setShowClueAnswer(true);
+    };
+
+    const handleClueAnswerPressEnd = () => {
+      setShowClueAnswer(false);
+      scheduleRefocus();
+    };
+
     return (
       <div className="app">
         <div className="theme-toggle">
@@ -585,33 +621,16 @@ export default function App() {
               </button>
 
               <button
-                className="btn-small"
+                className="btn-small clue-answer-btn"
                 disabled={!activeClue}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setShowClueAnswer(true);
-                }}
-                onMouseUp={() => {
-                  setShowClueAnswer(false);
-                  scheduleRefocus();
-                }}
-                onMouseLeave={() => {
-                  setShowClueAnswer(false);
-                  scheduleRefocus();
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  setShowClueAnswer(true);
-                }}
-                onTouchEnd={() => {
-                  setShowClueAnswer(false);
-                  scheduleRefocus();
-                }}
-                onTouchCancel={() => {
-                  setShowClueAnswer(false);
-                  scheduleRefocus();
-                }}
+                onPointerDown={handleClueAnswerPressStart}
+                onPointerUp={handleClueAnswerPressEnd}
+                onPointerLeave={handleClueAnswerPressEnd}
+                onPointerCancel={handleClueAnswerPressEnd}
               >
+                {freeClueUses > 0 && (
+                  <span className="clue-answer-badge">{freeClueUses}</span>
+                )}
                 Show Clue Answer
               </button>
 
