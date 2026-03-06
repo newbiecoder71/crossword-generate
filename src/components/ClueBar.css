@@ -5,7 +5,7 @@
   gap: 12px;
   background: #0f172a;
   border-top: 1px solid #1e3a8a;
-  padding: 10px;
+  padding: 11px 12px;
   color: #f1f5f9;
 }
 
@@ -14,8 +14,8 @@
   background: #1e293b;
   border: 1px solid #1e3a8a;
   border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 1rem;
+  padding: 7px 11px;
+  font-size: 1.05rem;
   cursor: pointer;
   color: #f8fafc;
 }
@@ -29,9 +29,10 @@
 }
 
 /* Labels */
-.clue-num,
-.clue-dir {
-  font-size: 0.75rem;
+.clue-bar .clue-num,
+.clue-bar .clue-dir {
+  font-size: 0.9rem;
+  font-weight: 700;
   color: #93c5fd;
   margin-bottom: 2px;
 }
@@ -49,8 +50,31 @@
   display: inline-block;
   padding-left: 0;
   color: #ffffff;
-  font-weight: 500;
+  font-size: 1.05rem;
+  font-weight: 600;
   white-space: nowrap;
+}
+
+@media (min-width: 901px) {
+  .clue-bar {
+    padding: 13px 14px;
+    gap: 14px;
+  }
+
+  .clue-btn {
+    font-size: 1.18rem;
+    padding: 8px 12px;
+  }
+
+  .clue-bar .clue-num,
+  .clue-bar .clue-dir {
+    font-size: 1.02rem;
+  }
+
+  .clue-bar .clue-text {
+    font-size: clamp(1.18rem, 1.18vw, 1.45rem);
+    font-weight: 700;
+  }
 }
 
 /* Only add animation when the 'scrolling' class is applied */

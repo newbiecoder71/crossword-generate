@@ -20,6 +20,7 @@ export default function CrosswordGrid({
   onPrevClue,
   onNextClue,
   onRefocusReady,
+  minGridWidth = 0,
 }) {
   const inputRefs = useRef([]);
   const [activeCell, setActiveCell] = useState(null);        // "r-c"
@@ -29,6 +30,7 @@ export default function CrosswordGrid({
   const gridFrameRef = useRef(null);
   const gridLayerRef = useRef(null);
   const [gridZoomStyle, setGridZoomStyle] = useState({});
+  const [desktopCellSize, setDesktopCellSize] = useState(null);
 
   // ---- Build refs when grid changes ----
   useEffect(() => {
@@ -321,6 +323,36 @@ export default function CrosswordGrid({
     return () => window.removeEventListener("resize", updateZoom);
   }, [activeClue, grid, refsReady]);
 
+  useEffect(() => {
+    const updateDesktopCellSize = () => {
+      if (!grid?.length || !grid?.[0]?.length) {
+        setDesktopCellSize(null);
+        return;
+      }
+
+      if (window.innerWidth <= 900) {
+        setDesktopCellSize(null);
+        return;
+      }
+
+      const rows = grid.length;
+      const cols = grid[0].length;
+
+      // Keep room for title/buttons/clue bar so puzzle fits without pushing clues off-screen.
+      const widthBudget = Math.max(420, window.innerWidth * 0.83);
+      const heightBudget = Math.max(300, window.innerHeight * 0.6);
+      const byWidth = (widthBudget - 16) / cols;
+      const byHeight = (heightBudget - 16) / rows;
+
+      const size = Math.floor(Math.min(byWidth, byHeight));
+      setDesktopCellSize(Math.max(34, Math.min(56, size)));
+    };
+
+    updateDesktopCellSize();
+    window.addEventListener("resize", updateDesktopCellSize);
+    return () => window.removeEventListener("resize", updateDesktopCellSize);
+  }, [grid]);
+
   // ---- Input handlers ----
   const handleInput = (r, c, val) => {
     // overwrite with the newest letter
@@ -492,12 +524,25 @@ export default function CrosswordGrid({
     return "";
   }  
 
+  const isDesktop = typeof window !== "undefined" && window.innerWidth > 900;
+  const safeMinGridWidth =
+    isDesktop && minGridWidth
+      ? Math.max(0, Math.min(minGridWidth, window.innerWidth * 0.92))
+      : 0;
+
   if (!grid || !answers) return <div>⚠️ Grid not ready</div>;
 
   return (
-    <div className="crossword-wrapper">
+    <div
+      className="crossword-wrapper"
+      style={desktopCellSize ? { "--cell-size": `${desktopCellSize}px` } : undefined}
+    >
       {/* GRID */}
-      <div className="grid" ref={gridFrameRef}>
+      <div
+        className="grid"
+        ref={gridFrameRef}
+        style={safeMinGridWidth ? { minWidth: `${safeMinGridWidth}px` } : undefined}
+      >
         <div className="grid-zoom-layer" ref={gridLayerRef} style={gridZoomStyle}>
           {grid.map((row, r) => (
             <div className="grid-row" key={r}>

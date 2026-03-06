@@ -109,8 +109,10 @@ export default function App() {
   const [unfinishedGames, setUnfinishedGames] = useState([]);
   const [currentSaveId, setCurrentSaveId] = useState(null);
   const [startExiting, setStartExiting] = useState(false);
+  const [actionButtonsWidth, setActionButtonsWidth] = useState(0);
   const puzzleBonusAwardedRef = useRef(false);
   const scoreBoardRef = useRef(null);
+  const actionButtonsRef = useRef(null);
 
   const [theme, setTheme] = useState(
     () => localStorage.getItem("theme") || "system"
@@ -259,6 +261,30 @@ export default function App() {
     window.addEventListener("resize", updateScoreBurstPath);
     return () => window.removeEventListener("resize", updateScoreBurstPath);
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "game") return;
+    const buttonsEl = actionButtonsRef.current;
+    if (!buttonsEl) return;
+
+    const updateButtonsWidth = () => {
+      setActionButtonsWidth(Math.ceil(buttonsEl.getBoundingClientRect().width));
+    };
+
+    updateButtonsWidth();
+
+    let ro;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(updateButtonsWidth);
+      ro.observe(buttonsEl);
+    }
+
+    window.addEventListener("resize", updateButtonsWidth);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener("resize", updateButtonsWidth);
+    };
+  }, [phase, puzzle, freeClueUses, showSolution]);
 
   const spawnScoreBurst = (delta) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -581,7 +607,7 @@ export default function App() {
 
             {error && <div className="error">{error}</div>}
 
-            <div className="action-buttons">
+            <div className="action-buttons" ref={actionButtonsRef}>
               <button
                 className="btn-small"
                 onMouseDown={(e) => e.preventDefault()}
@@ -639,6 +665,7 @@ export default function App() {
               onNextClue={handleNextClue}
               onWordMisspelled={handleWordMisspelledScore}
               onRefocusReady={setRefocusGrid}
+              minGridWidth={actionButtonsWidth ? actionButtonsWidth + 28 : 0}
               onWordComplete={(clue) => {
                 handleWordCompleteScore(clue);
                 const next = goToNextClue(clue, answers);
