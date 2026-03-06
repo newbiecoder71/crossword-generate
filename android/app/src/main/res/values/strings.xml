@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Crossword Generate+</string>
+    <string name="title_activity_main">Crossword Generate+</string>
+    <string name="package_name">com.manes.crosswordgenerate</string>
+    <string name="custom_url_scheme">com.manes.crosswordgenerate</string>
+</resources>
