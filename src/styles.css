@@ -827,7 +827,7 @@
   /* Make grid responsive on small screens */
 @media (max-width: 900px) {
   :root {
-    --cell-size: 2.05rem;
+    --cell-size: 1.78rem;
   }
 
   .grid .cell-input {
@@ -843,13 +843,23 @@
 
 @media (max-width: 480px) {
   .cell {
-    width: min(2.05rem, 5.4vw);
-    height: min(2.05rem, 5.4vw);
-    line-height: min(2.05rem, 5.4vw);
+    width: min(1.72rem, 4.75vw);
+    height: min(1.72rem, 4.75vw);
+    line-height: min(1.72rem, 4.75vw);
   }
 
   .grid .cell-letter {
     font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .privacy-footer-link.in-game {
+    position: static;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    margin-top: 8px;
   }
 }
 
