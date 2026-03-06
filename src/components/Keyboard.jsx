@@ -68,8 +68,9 @@ export default function Keyboard({ onKeyPress }) {
           onPointerUp={handlePressEnd}
           onPointerCancel={handlePressEnd}
           onPointerLeave={handlePressEnd}
+          aria-label="Backspace"
         >
-          ?
+          ⌫
         </button>
 
         <button

@@ -79,16 +79,15 @@
 
 /* Only add animation when the 'scrolling' class is applied */
 .clue-bar .clue-text.scrolling {
-  padding-left: 100%;
-  animation: clue-scroll 14s linear infinite;
+  animation: clue-scroll var(--clue-scroll-duration, 8s) linear infinite;
 }
 
 /* The scrolling animation */
 @keyframes clue-scroll {
   0% {
-    transform: translateX(100%);
+    transform: translateX(var(--clue-scroll-start, 100%));
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(calc(-1 * var(--clue-scroll-end, 100%)));
   }
 }

@@ -5,6 +5,7 @@ export default function ClueBar({ clue, onPrev, onNext }) {
   const marqueeRef = useRef(null);
   const textRef = useRef(null);
   const [shouldScroll, setShouldScroll] = useState(false);
+  const [scrollStyle, setScrollStyle] = useState({});
   const { number, clue: clueText = "", dir } = clue || {};
 
   const dirLabel =
@@ -17,7 +18,27 @@ export default function ClueBar({ clue, onPrev, onNext }) {
       const container = marqueeRef.current;
       const text = textRef.current;
       if (!container || !text) return;
-      setShouldScroll(text.scrollWidth > container.clientWidth);
+
+      const textWidth = text.scrollWidth;
+      const containerWidth = container.clientWidth;
+      const needsScroll = textWidth > containerWidth;
+      setShouldScroll(needsScroll);
+
+      if (!needsScroll) {
+        setScrollStyle({});
+        return;
+      }
+
+      // Speed tuned for readability while avoiding long dead time between loops.
+      const speedPxPerSecond = 56;
+      const totalDistance = textWidth + containerWidth;
+      const durationSeconds = Math.max(5, totalDistance / speedPxPerSecond);
+
+      setScrollStyle({
+        "--clue-scroll-start": `${containerWidth}px`,
+        "--clue-scroll-end": `${textWidth}px`,
+        "--clue-scroll-duration": `${durationSeconds}s`,
+      });
     };
 
     checkOverflow();
@@ -40,6 +61,7 @@ export default function ClueBar({ clue, onPrev, onNext }) {
           <span
             ref={textRef}
             className={`clue-text ${shouldScroll ? "scrolling" : ""}`}
+            style={shouldScroll ? scrollStyle : undefined}
           >
             {clueText}
           </span>
