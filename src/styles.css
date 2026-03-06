@@ -149,6 +149,81 @@
   z-index: 100;
 }
 
+.privacy-footer-link {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #dbeafe;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.privacy-footer-link.in-game {
+  bottom: 8px;
+}
+
+.privacy-page {
+  min-height: 100vh;
+  width: 100%;
+  padding: 20px 12px 28px;
+  background: linear-gradient(160deg, #020617, #0f172a);
+  color: #e2e8f0;
+  overflow-y: auto;
+}
+
+.privacy-card {
+  width: min(960px, 100%);
+  margin: 0 auto;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.82);
+  padding: 18px 16px;
+}
+
+.privacy-back-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  background: linear-gradient(145deg, #1e3a8a, #1d4ed8);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.privacy-card h1 {
+  margin: 4px 0 8px;
+}
+
+.privacy-subtitle {
+  color: #cbd5e1;
+  margin: 0 0 16px;
+}
+
+.privacy-section {
+  margin-bottom: 14px;
+}
+
+.privacy-section h2 {
+  margin: 0 0 8px;
+  color: #93c5fd;
+  font-size: 1.05rem;
+}
+
+.privacy-section p {
+  margin: 0 0 8px;
+  line-height: 1.45;
+  color: #e2e8f0;
+}
+
 .score-board {
   position: relative;
   min-width: 108px;

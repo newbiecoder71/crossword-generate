@@ -11,6 +11,7 @@ import { getWordsAndClues } from "./utils/ai.js";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 import WordStormStart from "./components/WordStormStart.jsx";
+import PrivacyPolicyPage from "./components/PrivacyPolicyPage.jsx";
 
 const clueKey = (clue) =>
   clue ? `${clue.dir}:${clue.row}:${clue.col}:${clue.word?.length ?? 0}` : null;
@@ -77,6 +78,7 @@ const getAutoWordCount = () => {
 
 export default function App() {
   const [phase, setPhase] = useState("start"); // start -> game
+  const [policyReturnPhase, setPolicyReturnPhase] = useState("start");
 
   const [topic, setTopic] = useState("");
   const [loading, setLoading] = useState(false);
@@ -451,17 +453,35 @@ export default function App() {
     setPhase("start");
   };
 
+  const openPrivacyPolicy = () => {
+    setPolicyReturnPhase(phase === "game" ? "game" : "start");
+    setPhase("privacy");
+  };
+
+  const closePrivacyPolicy = () => {
+    setPhase(policyReturnPhase === "game" ? "game" : "start");
+  };
+
+  if (phase === "privacy") {
+    return <PrivacyPolicyPage onBack={closePrivacyPolicy} />;
+  }
+
   if (phase === "start") {
     return (
-      <WordStormStart
-        onStart={handleGenerate}
-        loading={loading}
-        startExiting={startExiting}
-        highScore={highScore}
-        unfinishedGames={unfinishedGames}
-        onContinue={handleContinueGame}
-        onNewGame={handleNewGame}
-      />
+      <>
+        <WordStormStart
+          onStart={handleGenerate}
+          loading={loading}
+          startExiting={startExiting}
+          highScore={highScore}
+          unfinishedGames={unfinishedGames}
+          onContinue={handleContinueGame}
+          onNewGame={handleNewGame}
+        />
+        <button className="privacy-footer-link" onClick={openPrivacyPolicy}>
+          Privacy Policy
+        </button>
+      </>
     );
   }
 
@@ -739,6 +759,10 @@ export default function App() {
             </div>
           </>
         )}
+
+        <button className="privacy-footer-link in-game" onClick={openPrivacyPolicy}>
+          Privacy Policy
+        </button>
       </div>
     );
   }
