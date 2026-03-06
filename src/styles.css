@@ -32,6 +32,7 @@
     background-color: var(--bg);
     color: var(--ink);
     transition: background-color 0.4s ease, color 0.4s ease;
+    -webkit-text-size-adjust: 100%;
   }
 
   /* ===========================================
@@ -831,8 +832,11 @@
   }
 
   .grid .cell-input {
-    font-size: 0;
+    /* iOS Safari auto-zooms focused inputs smaller than 16px */
+    font-size: 16px;
     -webkit-text-fill-color: transparent;
+    color: transparent;
+    caret-color: transparent;
   }
 
   .grid .cell-letter {
@@ -846,6 +850,12 @@
     width: min(1.72rem, 4.75vw);
     height: min(1.72rem, 4.75vw);
     line-height: min(1.72rem, 4.75vw);
+  }
+
+  .cell-num {
+    font-size: 0.2rem;
+    top: 1px;
+    left: 1px;
   }
 
   .grid .cell-letter {
