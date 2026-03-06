@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Keyboard.css";
+import { HiBackspace } from "react-icons/hi2";
 
 export default function Keyboard({ onKeyPress }) {
   const [pressedKey, setPressedKey] = useState(null);
@@ -70,7 +71,7 @@ export default function Keyboard({ onKeyPress }) {
           onPointerLeave={handlePressEnd}
           aria-label="Backspace"
         >
-          ⌫
+          <HiBackspace />
         </button>
 
         <button
