@@ -91,6 +91,7 @@ export default function App() {
   const [showSolution, setShowSolution] = useState(false);
   const [showClueAnswer, setShowClueAnswer] = useState(false);
   const [refocusGrid, setRefocusGrid] = useState(() => () => {});
+  const clueAnswerTimerRef = useRef(null);
 
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(
@@ -105,6 +106,8 @@ export default function App() {
   });
   const [flashClue, setFlashClue] = useState(null);
   const [scoredClueKeys, setScoredClueKeys] = useState([]);
+  const [wrongAttemptsByClue, setWrongAttemptsByClue] = useState({});
+  const [perfectGameEligible, setPerfectGameEligible] = useState(true);
   const [freeClueUses, setFreeClueUses] = useState(
     () => Number(localStorage.getItem("crossword-free-clue-uses") || 0)
   );
@@ -113,6 +116,7 @@ export default function App() {
   const [startExiting, setStartExiting] = useState(false);
   const [actionButtonsWidth, setActionButtonsWidth] = useState(0);
   const puzzleBonusAwardedRef = useRef(false);
+  const perfectGameBonusAwardedRef = useRef(false);
   const scoreBoardRef = useRef(null);
   const actionButtonsRef = useRef(null);
 
@@ -127,6 +131,12 @@ export default function App() {
       document.documentElement.classList.remove("boot-dark");
     }
   }, [phase]);
+
+  useEffect(() => {
+    return () => {
+      if (clueAnswerTimerRef.current) clearTimeout(clueAnswerTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -182,6 +192,8 @@ export default function App() {
       direction,
       score,
       scoredClueKeys,
+      wrongAttemptsByClue,
+      perfectGameEligible,
       freeClueUses,
       puzzleComplete,
     };
@@ -194,9 +206,15 @@ export default function App() {
       localStorage.setItem("crossword-progress", JSON.stringify(snapshot));
       return sorted;
     });
-  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, freeClueUses, puzzleComplete, currentSaveId]);
+  }, [puzzle, answers, activeClue, direction, topic, score, scoredClueKeys, wrongAttemptsByClue, perfectGameEligible, freeClueUses, puzzleComplete, currentSaveId]);
 
-  useEffect(() => setShowClueAnswer(false), [activeClue]);
+  useEffect(() => {
+    setShowClueAnswer(false);
+    if (clueAnswerTimerRef.current) {
+      clearTimeout(clueAnswerTimerRef.current);
+      clueAnswerTimerRef.current = null;
+    }
+  }, [activeClue]);
 
   useEffect(() => {
     if (!puzzleComplete || !currentSaveId) return;
@@ -212,6 +230,13 @@ export default function App() {
     setFreeClueUses((prev) => prev + 1);
     puzzleBonusAwardedRef.current = true;
   }, [puzzleComplete]);
+
+  useEffect(() => {
+    if (!puzzleComplete || !perfectGameEligible || perfectGameBonusAwardedRef.current) return;
+    setScore((prev) => prev + 25);
+    spawnScoreBurst(25);
+    perfectGameBonusAwardedRef.current = true;
+  }, [puzzleComplete, perfectGameEligible]);
 
   useEffect(() => {
     if (!showClueAnswer) return;
@@ -313,11 +338,14 @@ export default function App() {
     setTopic(data.topic ?? "");
     setScore(Number(data.score || 0));
     setScoredClueKeys(Array.isArray(data.scoredClueKeys) ? data.scoredClueKeys : []);
+    setWrongAttemptsByClue(data?.wrongAttemptsByClue && typeof data.wrongAttemptsByClue === "object" ? data.wrongAttemptsByClue : {});
+    setPerfectGameEligible(data?.perfectGameEligible !== false);
     setPuzzleComplete(completed);
     setShowSolution(false);
     setShowClueAnswer(false);
     setFlashClue(null);
     puzzleBonusAwardedRef.current = false;
+    perfectGameBonusAwardedRef.current = false;
     setCurrentSaveId(data.saveId || `${Date.now()}-${Math.random()}`);
     setPhase("game");
   };
@@ -336,12 +364,15 @@ export default function App() {
     setCurrentSaveId(null);
     setScore(0);
     setScoredClueKeys([]);
+    setWrongAttemptsByClue({});
+    setPerfectGameEligible(true);
     setFlashClue(null);
     setPuzzleComplete(false);
     setShowSolution(false);
     setShowClueAnswer(false);
     setStartExiting(false);
     puzzleBonusAwardedRef.current = false;
+    perfectGameBonusAwardedRef.current = false;
   };
 
   const handleGenerate = async (chosenTopic) => {
@@ -400,11 +431,12 @@ export default function App() {
     }
   };
 
-  const handleWordCompleteScore = (clue) => {
+  const handleWordCompleteScore = (clue, firstTry = false) => {
     const key = clueKey(clue);
     if (!key || scoredClueKeys.includes(key)) return;
 
-    const gained = Math.max(3, clue.word?.length || 0);
+    const base = Math.max(3, clue.word?.length || 0);
+    const gained = base + (firstTry ? 5 : 0);
     setScoredClueKeys((prev) => [...prev, key]);
     setScore((prev) => prev + gained);
     spawnScoreBurst(gained);
@@ -413,12 +445,29 @@ export default function App() {
     setTimeout(() => setFlashClue(null), 550);
   };
 
-  const handleWordMisspelledScore = () => {
+  const handleWordMisspelledScore = (clue) => {
+    const key = clueKey(clue);
+    if (!key) return;
+    setWrongAttemptsByClue((prev) => ({
+      ...prev,
+      [key]: (prev[key] || 0) + 1,
+    }));
+    setPerfectGameEligible(false);
+  };
+
+  const handleWrongLetterPenalty = () => {
     setScore((prev) => prev - 1);
     spawnScoreBurst(-1);
+    setPerfectGameEligible(false);
   };
 
   const handleQuitGame = () => {
+    if (clueAnswerTimerRef.current) {
+      clearTimeout(clueAnswerTimerRef.current);
+      clueAnswerTimerRef.current = null;
+    }
+    setShowClueAnswer(false);
+
     const snapshot = puzzle
       ? {
           saveId: currentSaveId || `${Date.now()}-${Math.random()}`,
@@ -433,6 +482,8 @@ export default function App() {
           direction,
           score,
           scoredClueKeys,
+          wrongAttemptsByClue,
+          perfectGameEligible,
           freeClueUses,
           puzzleComplete,
         }
@@ -563,8 +614,7 @@ export default function App() {
       });
     };
 
-    const handleClueAnswerPressStart = (e) => {
-      e.preventDefault();
+    const handleClueAnswerClick = () => {
       if (!activeClue) return;
 
       if (freeClueUses > 0) {
@@ -574,11 +624,11 @@ export default function App() {
         spawnScoreBurst(-1);
       }
       setShowClueAnswer(true);
-    };
-
-    const handleClueAnswerPressEnd = () => {
-      setShowClueAnswer(false);
-      scheduleRefocus();
+      if (clueAnswerTimerRef.current) clearTimeout(clueAnswerTimerRef.current);
+      clueAnswerTimerRef.current = setTimeout(() => {
+        setShowClueAnswer(false);
+        scheduleRefocus();
+      }, 2000);
     };
 
     return (
@@ -643,10 +693,7 @@ export default function App() {
               <button
                 className="btn-small clue-answer-btn"
                 disabled={!activeClue}
-                onPointerDown={handleClueAnswerPressStart}
-                onPointerUp={handleClueAnswerPressEnd}
-                onPointerLeave={handleClueAnswerPressEnd}
-                onPointerCancel={handleClueAnswerPressEnd}
+                onClick={handleClueAnswerClick}
               >
                 {freeClueUses > 0 && (
                   <span className="clue-answer-badge">{freeClueUses}</span>
@@ -683,11 +730,13 @@ export default function App() {
               flashClue={flashClue}
               onPrevClue={handlePrevClue}
               onNextClue={handleNextClue}
+              wrongAttemptsByClue={wrongAttemptsByClue}
               onWordMisspelled={handleWordMisspelledScore}
+              onWrongLetterPenalty={handleWrongLetterPenalty}
               onRefocusReady={setRefocusGrid}
               minGridWidth={actionButtonsWidth ? actionButtonsWidth + 28 : 0}
-              onWordComplete={(clue) => {
-                handleWordCompleteScore(clue);
+              onWordComplete={(clue, meta) => {
+                handleWordCompleteScore(clue, Boolean(meta?.firstTry));
                 const next = goToNextClue(clue, answers);
                 if (next) {
                   setActiveClue(next);
@@ -723,6 +772,9 @@ export default function App() {
                     setShowSolution(false);
                     setScore(0);
                     setScoredClueKeys([]);
+                    setWrongAttemptsByClue({});
+                    setPerfectGameEligible(true);
+                    perfectGameBonusAwardedRef.current = false;
                     setStartExiting(false);
                     setPhase("start");
                   }}
@@ -749,6 +801,9 @@ export default function App() {
                     setTopic("");
                     setScore(0);
                     setScoredClueKeys([]);
+                    setWrongAttemptsByClue({});
+                    setPerfectGameEligible(true);
+                    perfectGameBonusAwardedRef.current = false;
                     setStartExiting(false);
                     setPhase("start");
                   }}

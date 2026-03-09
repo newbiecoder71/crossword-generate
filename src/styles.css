@@ -673,6 +673,10 @@
   justify-content: center;
 }
 
+.zoom-out-btn {
+  display: none;
+}
+
 .cell.flash-word-cell .cell-input {
   animation: solved-flash 0.55s ease-out;
 }
@@ -849,6 +853,21 @@
   .grid .cell-letter {
     font-size: 0.78rem;
     line-height: 1;
+  }
+
+  .zoom-out-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 12px;
+    margin-top: 2px;
+    background: linear-gradient(145deg, #1e3a8a, #1d4ed8);
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
   }
 }
 

@@ -15,6 +15,8 @@ export default function CrosswordGrid({
   showSolution,
   onWordComplete,
   onWordMisspelled,
+  onWrongLetterPenalty,
+  wrongAttemptsByClue = {},
   showClueAnswer,
   flashClue,
   onPrevClue,
@@ -31,6 +33,7 @@ export default function CrosswordGrid({
   const gridLayerRef = useRef(null);
   const [gridZoomStyle, setGridZoomStyle] = useState({});
   const [desktopCellSize, setDesktopCellSize] = useState(null);
+  const [manualZoomOut, setManualZoomOut] = useState(false);
 
   // ---- Build refs when grid changes ----
   useEffect(() => {
@@ -68,6 +71,9 @@ export default function CrosswordGrid({
         : null,
     [activeClue]
   );
+
+  const buildClueKey = (clue) =>
+    clue ? `${clue.dir}:${clue.row}:${clue.col}:${clue.word?.length ?? 0}` : null;
 
   // Prev non-block cell (in current direction)
   const findPrevCell = (r, c) => {
@@ -279,6 +285,11 @@ export default function CrosswordGrid({
         return;
       }
 
+      if (manualZoomOut) {
+        setGridZoomStyle({});
+        return;
+      }
+
       const probeCell = layer.querySelector(".cell:not(.block)");
       if (!probeCell) {
         setGridZoomStyle({});
@@ -321,7 +332,7 @@ export default function CrosswordGrid({
     updateZoom();
     window.addEventListener("resize", updateZoom);
     return () => window.removeEventListener("resize", updateZoom);
-  }, [activeClue, grid, refsReady]);
+  }, [activeClue, grid, refsReady, manualZoomOut]);
 
   useEffect(() => {
     const updateDesktopCellSize = () => {
@@ -357,6 +368,9 @@ export default function CrosswordGrid({
   const handleInput = (r, c, val) => {
     // overwrite with the newest letter
     const char = (val ?? "").toUpperCase().replace(/[^A-Z]/g, "").slice(-1);
+    if (char && manualZoomOut && window.innerWidth <= 900) {
+      setManualZoomOut(false);
+    }
 
     suppressFocusRef.current = true;
     const next = answers.map((row) => [...row]);
@@ -371,6 +385,14 @@ export default function CrosswordGrid({
 
     // Handle clue completion/misspelling transitions.
     if (activeClue) {
+      const currentClueKey = buildClueKey(activeClue);
+      const attemptCount = currentClueKey ? Number(wrongAttemptsByClue?.[currentClueKey] || 0) : 0;
+      const expectedLetterAtCell =
+        solutionLetter(r, c, placements)?.toUpperCase() || "";
+      if (char && attemptCount >= 3 && char !== expectedLetterAtCell) {
+        onWrongLetterPenalty?.(activeClue);
+      }
+
       const wasCorrect = isWordCorrect(activeClue, answers);
       const nowCorrect = isWordCorrect(activeClue, next);
       const wasFilled = isClueFilled(activeClue, answers);
@@ -378,9 +400,10 @@ export default function CrosswordGrid({
 
       // If user fixes a previously incorrect clue, award and advance.
       if (!wasCorrect && nowCorrect) {
-        setTimeout(() => onWordComplete?.(activeClue), 150);
+        const firstTry = attemptCount === 0;
+        setTimeout(() => onWordComplete?.(activeClue, { firstTry }), 150);
       } else if (!wasFilled && nowFilled && !nowCorrect) {
-        // Only penalize when clue first becomes fully filled and still wrong.
+        // Track misspelled full-word attempts; per-letter penalties apply after 3 attempts.
         onWordMisspelled?.(activeClue);
       }
     }
@@ -627,6 +650,16 @@ export default function CrosswordGrid({
           ))}
         </div>
       </div>
+
+      {typeof window !== "undefined" && window.innerWidth <= 900 && (
+        <button
+          className="zoom-out-btn"
+          onClick={() => setManualZoomOut(true)}
+          type="button"
+        >
+          Zoom Out
+        </button>
+      )}
 
       {/* CLUE BAR */}
       <ClueBar clue={activeClue} onPrev={onPrevClue} onNext={onNextClue} />
