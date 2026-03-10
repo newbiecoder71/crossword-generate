@@ -10,6 +10,8 @@ import {
 import { getWordsAndClues } from "./utils/ai.js";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import WordStormStart from "./components/WordStormStart.jsx";
 import PrivacyPolicyPage from "./components/PrivacyPolicyPage.jsx";
 
@@ -504,6 +506,60 @@ export default function App() {
     setPhase("start");
   };
 
+  const resetAfterSolvedGame = (resetTopic = false) => {
+    localStorage.removeItem("crossword-progress");
+    if (currentSaveId) {
+      setUnfinishedGames((prev) => {
+        const next = prev.filter((entry) => entry.saveId !== currentSaveId);
+        writeUnfinishedGames(next);
+        return next;
+      });
+    }
+    setPuzzle(null);
+    setAnswers([]);
+    setPuzzleComplete(false);
+    setActiveClue(null);
+    setCurrentSaveId(null);
+    setShowSolution(false);
+    if (resetTopic) setTopic("");
+    setScore(0);
+    setScoredClueKeys([]);
+    setWrongAttemptsByClue({});
+    setPerfectGameEligible(true);
+    setStartExiting(false);
+    perfectGameBonusAwardedRef.current = false;
+    setPhase("start");
+  };
+
+  const handleExitApp = async () => {
+    const nativePlatform =
+      Capacitor.isNativePlatform() ||
+      Capacitor.getPlatform() === "android" ||
+      Capacitor.getPlatform() === "ios";
+
+    // In native builds, close/minimize the app.
+    if (nativePlatform) {
+      try {
+        await CapacitorApp.exitApp();
+        return;
+      } catch {
+        try {
+          await CapacitorApp.minimizeApp();
+          return;
+        } catch {
+          return;
+        }
+      }
+    }
+
+    // Web fallback: attempt to close the window/tab if allowed by browser.
+    try {
+      window.close();
+    } catch {
+      // no-op
+    }
+  };
+
   const openPrivacyPolicy = () => {
     setPolicyReturnPhase(phase === "game" ? "game" : "start");
     setPhase("privacy");
@@ -755,58 +811,13 @@ export default function App() {
               <div className="end-buttons">
                 <button
                   className="btn"
-                  onClick={() => {
-                    localStorage.removeItem("crossword-progress");
-                    if (currentSaveId) {
-                      setUnfinishedGames((prev) => {
-                        const next = prev.filter((entry) => entry.saveId !== currentSaveId);
-                        writeUnfinishedGames(next);
-                        return next;
-                      });
-                    }
-                    setPuzzle(null);
-                    setAnswers([]);
-                    setPuzzleComplete(false);
-                    setActiveClue(null);
-                    setCurrentSaveId(null);
-                    setShowSolution(false);
-                    setScore(0);
-                    setScoredClueKeys([]);
-                    setWrongAttemptsByClue({});
-                    setPerfectGameEligible(true);
-                    perfectGameBonusAwardedRef.current = false;
-                    setStartExiting(false);
-                    setPhase("start");
-                  }}
+                  onClick={() => resetAfterSolvedGame(false)}
                 >
                   Play Again
                 </button>
                 <button
                   className="btn"
-                  onClick={() => {
-                    localStorage.removeItem("crossword-progress");
-                    if (currentSaveId) {
-                      setUnfinishedGames((prev) => {
-                        const next = prev.filter((entry) => entry.saveId !== currentSaveId);
-                        writeUnfinishedGames(next);
-                        return next;
-                      });
-                    }
-                    setPuzzle(null);
-                    setAnswers([]);
-                    setPuzzleComplete(false);
-                    setActiveClue(null);
-                    setCurrentSaveId(null);
-                    setShowSolution(false);
-                    setTopic("");
-                    setScore(0);
-                    setScoredClueKeys([]);
-                    setWrongAttemptsByClue({});
-                    setPerfectGameEligible(true);
-                    perfectGameBonusAwardedRef.current = false;
-                    setStartExiting(false);
-                    setPhase("start");
-                  }}
+                  onClick={handleExitApp}
                 >
                   Exit
                 </button>

@@ -24,6 +24,7 @@ export default function CrosswordGrid({
   onRefocusReady,
   minGridWidth = 0,
 }) {
+  const AUTO_ZOOM_SCALE = 1.65;
   const inputRefs = useRef([]);
   const [activeCell, setActiveCell] = useState(null);        // "r-c"
   const lastClueKeyRef = useRef(null);                       // remember last handled answer span
@@ -34,6 +35,8 @@ export default function CrosswordGrid({
   const [gridZoomStyle, setGridZoomStyle] = useState({});
   const [desktopCellSize, setDesktopCellSize] = useState(null);
   const [manualZoomOut, setManualZoomOut] = useState(false);
+  const [manualScale, setManualScale] = useState(1);
+  const pinchRef = useRef({ active: false, startDistance: 0, startScale: 1 });
 
   // ---- Build refs when grid changes ----
   useEffect(() => {
@@ -74,6 +77,13 @@ export default function CrosswordGrid({
 
   const buildClueKey = (clue) =>
     clue ? `${clue.dir}:${clue.row}:${clue.col}:${clue.word?.length ?? 0}` : null;
+
+  const touchDistance = (touches) => {
+    if (!touches || touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  };
 
   // Prev non-block cell (in current direction)
   const findPrevCell = (r, c) => {
@@ -286,7 +296,10 @@ export default function CrosswordGrid({
       }
 
       if (manualZoomOut) {
-        setGridZoomStyle({});
+        setGridZoomStyle({
+          transform: `scale(${manualScale})`,
+          transformOrigin: "center top",
+        });
         return;
       }
 
@@ -312,7 +325,7 @@ export default function CrosswordGrid({
       const centerRow = dir === "down" ? row + (len - 1) / 2 : row;
       const centerCol = dir === "across" ? col + (len - 1) / 2 : col;
 
-      const zoom = 1.65;
+      const zoom = AUTO_ZOOM_SCALE;
       const focusX = (centerCol + 0.5) * cellSize;
       const focusY = (centerRow + 0.5) * cellSize;
 
@@ -332,7 +345,7 @@ export default function CrosswordGrid({
     updateZoom();
     window.addEventListener("resize", updateZoom);
     return () => window.removeEventListener("resize", updateZoom);
-  }, [activeClue, grid, refsReady, manualZoomOut]);
+  }, [activeClue, grid, refsReady, manualZoomOut, manualScale]);
 
   useEffect(() => {
     const updateDesktopCellSize = () => {
@@ -368,9 +381,6 @@ export default function CrosswordGrid({
   const handleInput = (r, c, val) => {
     // overwrite with the newest letter
     const char = (val ?? "").toUpperCase().replace(/[^A-Z]/g, "").slice(-1);
-    if (char && manualZoomOut && window.innerWidth <= 900) {
-      setManualZoomOut(false);
-    }
 
     suppressFocusRef.current = true;
     const next = answers.map((row) => [...row]);
@@ -400,6 +410,10 @@ export default function CrosswordGrid({
 
       // If user fixes a previously incorrect clue, award and advance.
       if (!wasCorrect && nowCorrect) {
+        if (manualZoomOut) {
+          setManualZoomOut(false);
+          setManualScale(1);
+        }
         const firstTry = attemptCount === 0;
         setTimeout(() => onWordComplete?.(activeClue, { firstTry }), 150);
       } else if (!wasFilled && nowFilled && !nowCorrect) {
@@ -534,6 +548,63 @@ export default function CrosswordGrid({
     }
   };
 
+  const handleGridTouchStart = (e) => {
+    if (window.innerWidth > 900) return;
+    if (e.touches.length !== 2) return;
+    const dist = touchDistance(e.touches);
+    if (!dist) return;
+
+    pinchRef.current = {
+      active: true,
+      startDistance: dist,
+      startScale: manualZoomOut ? manualScale : AUTO_ZOOM_SCALE,
+    };
+  };
+
+  const handleGridTouchMove = (e) => {
+    if (window.innerWidth > 900) return;
+    if (!pinchRef.current.active || e.touches.length !== 2) return;
+    e.preventDefault();
+
+    const dist = touchDistance(e.touches);
+    if (!dist || !pinchRef.current.startDistance) return;
+    const rawScale = pinchRef.current.startScale * (dist / pinchRef.current.startDistance);
+    // Do not allow zooming out smaller than full-grid fit (scale 1).
+    const nextScale = Math.max(1, Math.min(AUTO_ZOOM_SCALE, rawScale));
+
+    setManualScale(nextScale);
+    setManualZoomOut(nextScale < AUTO_ZOOM_SCALE - 0.01);
+  };
+
+  const handleGridTouchEnd = () => {
+    pinchRef.current.active = false;
+
+    // Restore focus to the active cell so typing can continue immediately.
+    if (activeCell) {
+      const [r, c] = activeCell.split("-").map(Number);
+      const el = inputRefs.current?.[r]?.[c]?.current;
+      if (el) {
+        setTimeout(() => el.focus(), 0);
+      }
+    }
+  };
+
+  const handlePrevClueClick = () => {
+    if (manualZoomOut) {
+      setManualZoomOut(false);
+      setManualScale(1);
+    }
+    onPrevClue?.();
+  };
+
+  const handleNextClueClick = () => {
+    if (manualZoomOut) {
+      setManualZoomOut(false);
+      setManualScale(1);
+    }
+    onNextClue?.();
+  };
+
   // ---- Render a solution letter if needed ----
   function solutionLetter(r, c, placements) {
     for (const p of placements) {
@@ -565,6 +636,10 @@ export default function CrosswordGrid({
         className="grid"
         ref={gridFrameRef}
         style={safeMinGridWidth ? { minWidth: `${safeMinGridWidth}px` } : undefined}
+        onTouchStart={handleGridTouchStart}
+        onTouchMove={handleGridTouchMove}
+        onTouchEnd={handleGridTouchEnd}
+        onTouchCancel={handleGridTouchEnd}
       >
         <div className="grid-zoom-layer" ref={gridLayerRef} style={gridZoomStyle}>
           {grid.map((row, r) => (
@@ -651,18 +726,12 @@ export default function CrosswordGrid({
         </div>
       </div>
 
-      {typeof window !== "undefined" && window.innerWidth <= 900 && (
-        <button
-          className="zoom-out-btn"
-          onClick={() => setManualZoomOut(true)}
-          type="button"
-        >
-          Zoom Out
-        </button>
-      )}
-
       {/* CLUE BAR */}
-      <ClueBar clue={activeClue} onPrev={onPrevClue} onNext={onNextClue} />
+      <ClueBar
+        clue={activeClue}
+        onPrev={handlePrevClueClick}
+        onNext={handleNextClueClick}
+      />
 
       {/* ON-SCREEN KEYBOARD */}
       <Keyboard onKeyPress={handleVirtualKey} />
