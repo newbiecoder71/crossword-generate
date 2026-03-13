@@ -258,10 +258,15 @@ export default function CrosswordGrid({
     if (clueKey === lastClueKeyRef.current) return;
     lastClueKeyRef.current = clueKey;
 
-    // Already inside? leave caret alone
+    // Already inside this clue span? leave caret alone
     if (activeCell) {
       const [cr, cc] = activeCell.split("-").map(Number);
-      if (isCellInClue(cr, cc, activeClue)) return;
+      const { row, col, dir, word } = activeClue;
+      const inSpan =
+        dir === "across"
+          ? cr === row && cc >= col && cc < col + word.length
+          : cc === col && cr >= row && cr < row + word.length;
+      if (inSpan) return;
     }
 
     const { row, col, dir, word } = activeClue;
@@ -278,7 +283,7 @@ export default function CrosswordGrid({
       }
     }
     // fully filled: do nothing
-  }, [clueKey, refsReady]); // <— depend on the stable key only
+  }, [clueKey, refsReady, activeClue, grid, answers, activeCell]);
 
   useEffect(() => {
     const updateZoom = () => {
