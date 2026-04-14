@@ -5,6 +5,7 @@ import "./WordStorm.css";
 export default function WordStormStart({
   onStart,
   loading,
+  error = "",
   startExiting = false,
   highScore = 0,
   unfinishedGames = [],
@@ -185,6 +186,7 @@ export default function WordStormStart({
                 >
                   {loading ? <em>Generating...</em> : "Generate"}
                 </button>
+                {error && <div className="wordstorm-error">{error}</div>}
               </>
             )}
           </MotionDiv>

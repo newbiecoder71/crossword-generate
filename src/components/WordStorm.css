@@ -182,6 +182,20 @@
   transform: none;
 }
 
+.wordstorm-error {
+  width: min(90vw, 520px);
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(127, 29, 29, 0.26);
+  color: #fee2e2;
+  font-size: 0.96rem;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
 .high-score-panel {
   z-index: 20;
   margin-top: 0;

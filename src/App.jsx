@@ -579,6 +579,7 @@ export default function App() {
         <WordStormStart
           onStart={handleGenerate}
           loading={loading}
+          error={error}
           startExiting={startExiting}
           highScore={highScore}
           unfinishedGames={unfinishedGames}
